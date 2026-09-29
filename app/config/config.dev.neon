@@ -1,0 +1,6 @@
+application:
+    catchExceptions: false
+
+tracy:
+    bar:
+        - Nextras\MailPanel\MailPanel(%tempDir%/mail-panel-latte)

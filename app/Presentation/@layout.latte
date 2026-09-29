@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{ifset title}{include title|stripHtml} – {/ifset}Zvadlo</title>
+    {vite('frontend/app.ts')}
+</head>
+<body>
+<nav n:class="navbar, navbar-expand-md, bg-body-tertiary, border-bottom, $environment->showBanner ? 'navbar--' . $environment->color">
+    <div class="container">
+        <a class="navbar-brand" n:href="Home:default">
+            <span n:if="$environment->showBanner" class="badge text-bg-warning me-2" title="{$environment->label}" data-test="environment-badge">{$environment->label}</span>
+            Zvadlo
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-navigation" aria-controls="main-navigation" aria-expanded="false" aria-label="Otevřít menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="main-navigation">
+            <ul class="navbar-nav ms-auto">
+                {if $user->isLoggedIn()}
+                    <li class="nav-item"><a class="nav-link" n:href=":Dashboard:default">Přehled</a></li>
+                    <li class="nav-item"><span class="nav-link text-body-secondary" data-test="current-role">{$user->getIdentity()->role->displayName}</span></li>
+                    <li class="nav-item"><a class="nav-link" n:href=":Auth:out" data-test="logout-link">Odhlásit</a></li>
+                {else}
+                    <li class="nav-item"><a class="nav-link" n:href=":Auth:in">Přihlásit</a></li>
+                {/if}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container py-3">
+    <div n:foreach="$flashes as $flash" n:class="alert, 'alert-' . $flash->type" role="alert">{$flash->message}</div>
+    {include content}
+</main>
+
+<footer class="container py-4 small text-body-secondary border-top">
+    <a href="#" class="link-secondary" data-test="footer-bug-report-link">Nahlásit problém</a>
+    <span class="mx-2">·</span>
+    <span>Zvadlo {$environment->releaseHash}</span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,141 @@
+name: zvadlo
+
+volumes:
+    mariadb:
+
+x-php: &php
+    build:
+        context: ./containers/php
+        args:
+            PHP_VERSION: ${PHP_VERSION:-8.4}
+    command: ["php-fpm", "-R"]
+    working_dir: /app
+    volumes:
+        - ../:/app
+    environment:
+        HOME: /tmp
+        COMPOSER_HOME: /tmp/composer
+
+x-mariadb: &mariadb
+    image: mariadb:11.4
+    environment:
+        MARIADB_DATABASE: ${DB_NAME:-zvadlo}
+        MARIADB_USER: ${DB_USER:-zvadlo}
+        MARIADB_PASSWORD: ${DB_PASSWORD:-zvadlo}
+        MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    volumes:
+        - ./containers/mariadb/my.cnf:/etc/mysql/conf.d/app.cnf:ro
+    healthcheck:
+        test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+        interval: 3s
+        timeout: 3s
+        retries: 20
+
+services:
+    traefik:
+        image: traefik:v3.6
+        ports:
+            - "${TRAEFIK_HOST_PORT:-80}:80"
+        volumes:
+            - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+            - ./containers/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+        networks:
+            default:
+                aliases:
+                    - ${DEV_HOST:-moje-hospodareni.cz}
+        labels:
+            traefik.enable: true
+            traefik.http.routers.traefik.rule: Host(`traefik.localhost`)
+            traefik.http.routers.traefik.entrypoints: web
+            traefik.http.routers.traefik.service: api@internal
+
+    php:
+        <<: *php
+        depends_on:
+            mariadb:
+                condition: service_healthy
+            mailpit:
+                condition: service_started
+
+    php-test:
+        <<: *php
+        environment:
+            HOME: /tmp
+            COMPOSER_HOME: /tmp/composer
+            APP_ENV: ci
+        depends_on:
+            mariadb-test:
+                condition: service_healthy
+            mailpit:
+                condition: service_started
+
+    node:
+        image: node:24-alpine
+        working_dir: /app
+        volumes:
+            - ../:/app
+        environment:
+            HOME: /tmp
+            npm_config_cache: /tmp/npm
+
+    nginx:
+        image: nginx:1.27-alpine
+        volumes:
+            - ../:/app:ro
+            - ./containers/nginx/conf.d:/etc/nginx/conf.d:ro
+        depends_on:
+            - php
+            - php-test
+        labels:
+            traefik.enable: true
+            traefik.http.routers.app.rule: Host(`${DEV_HOST:-moje-hospodareni.cz}`)
+            traefik.http.routers.app.entrypoints: web
+            traefik.http.services.app.loadbalancer.server.port: 80
+
+    mariadb:
+        <<: *mariadb
+        ports:
+            - "${DB_HOST_PORT:-3306}:3306"
+        volumes:
+            - mariadb:/var/lib/mysql
+            - ./containers/mariadb/my.cnf:/etc/mysql/conf.d/app.cnf:ro
+
+    mariadb-test:
+        <<: *mariadb
+        tmpfs:
+            - /var/lib/mysql
+
+    mailpit:
+        image: axllent/mailpit
+        environment:
+            MP_SMTP_AUTH_ACCEPT_ANY: 1
+            MP_SMTP_AUTH_ALLOW_INSECURE: 1
+        labels:
+            traefik.enable: true
+            traefik.http.routers.mail.rule: Host(`mail.localhost`)
+            traefik.http.routers.mail.entrypoints: web
+            traefik.http.services.mail.loadbalancer.server.port: 8025
+
+    selenium:
+        image: selenium/standalone-chrome
+        shm_size: 2g
+        environment:
+            SE_VNC_NO_PASSWORD: 1
+            SE_NODE_SESSION_TIMEOUT: 900
+            SCREEN_WIDTH: 1920
+            SCREEN_HEIGHT: 1080
+        labels:
+            traefik.enable: true
+            traefik.http.routers.selenium.rule: Host(`selenium.localhost`)
+            traefik.http.routers.selenium.entrypoints: web
+            traefik.http.services.selenium.loadbalancer.server.port: 7900
+
+    adminer:
+        image: adminer:latest
+        environment:
+            ADMINER_DEFAULT_SERVER: mariadb
+        labels:
+            traefik.enable: true
+            traefik.http.routers.adminer.rule: Host(`adminer.localhost`)
+            traefik.http.routers.adminer.entrypoints: web
+            traefik.http.services.adminer.loadbalancer.server.port: 8080

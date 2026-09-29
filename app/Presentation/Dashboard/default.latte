@@ -1,0 +1,42 @@
+{block title}Přehled{/block}
+
+{block content}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Přehled</h1>
+        <p class="mb-0 text-body-secondary">
+            <span data-test="account-name">{$account->displayName}</span>
+            <span class="mx-1">·</span>
+            <span data-test="dashboard-role">{$role->displayName}</span>
+        </p>
+    </div>
+    <form n:name="roleForm" class="d-flex gap-2 align-items-end" data-allow-resubmit>
+        <div>
+            <label n:name="role" class="form-label small mb-1"></label>
+            <select n:name="role" class="form-select" data-test="role-select"></select>
+        </div>
+        <button n:name="switch" class="btn btn-outline-primary" data-test="role-switch"></button>
+    </form>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-md-6">
+        <div class="card h-100">
+            <div class="card-header">Jednotky, které smíte spravovat</div>
+            <ul class="list-group list-group-flush" data-test="edit-units">
+                <li n:foreach="$editUnits as $unit" class="list-group-item">{$unit->displayName} <span class="text-body-secondary small">{$unit->registrationNumber}</span></li>
+                <li n:if="$editUnits === []" class="list-group-item text-body-secondary">Vaše role neumožňuje spravovat akce. Zkuste přepnout roli.</li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="card h-100">
+            <div class="card-header">Jednotky, jejichž akce vidíte</div>
+            <ul class="list-group list-group-flush" data-test="read-units">
+                <li n:foreach="$readUnits as $unit" class="list-group-item">{$unit->displayName} <span class="text-body-secondary small">{$unit->registrationNumber}</span></li>
+                <li n:if="$readUnits === []" class="list-group-item text-body-secondary">Žádné.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{/block}

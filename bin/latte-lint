@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+// Lints the templates with the engine the application really uses, so custom functions and tags are known.
+
+require __DIR__.'/../vendor/autoload.php';
+
+$container = App\Bootstrap::boot()->createContainer();
+$engine = $container->getByType(Nette\Bridges\ApplicationLatte\LatteFactory::class)->create();
+
+$linter = new Latte\Tools\Linter($engine);
+
+exit($linter->scanDirectory(__DIR__.'/../app') ? 0 : 1);

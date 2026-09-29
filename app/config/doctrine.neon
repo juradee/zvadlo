@@ -1,0 +1,41 @@
+extensions:
+    dbal: Nettrine\DBAL\DI\DbalExtension
+    orm: Nettrine\ORM\DI\OrmExtension
+    migrations: Nettrine\Migrations\DI\MigrationsExtension
+    fixtures: Nettrine\Fixtures\DI\FixturesExtension
+
+dbal:
+    debug:
+        panel: %debugMode%
+    connections:
+        default:
+            driver: pdo_mysql
+            host: %database.host%
+            dbname: %database.name%
+            user: %database.user%
+            password: %database.password%
+            charset: utf8mb4
+            serverVersion: mariadb-11.4.0
+            defaultTableOptions:
+                charset: utf8mb4
+                collate: utf8mb4_czech_ci
+
+orm:
+    managers:
+        default:
+            connection: default
+            lazyNativeObjects: true
+            mapping:
+                App:
+                    type: attributes
+                    directories:
+                        - %projectDir%/app/Model
+                    namespace: App\Model
+
+migrations:
+    directories:
+        App\Migrations: %projectDir%/migrations
+
+fixtures:
+    paths:
+        - %projectDir%/app/Fixtures

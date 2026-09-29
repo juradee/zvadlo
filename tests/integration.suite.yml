@@ -1,0 +1,9 @@
+actor: IntegrationTester
+modules:
+    enabled:
+        - Asserts
+        - App\Tests\Support\Helper\NetteContainer
+        - Db:
+              dsn: 'mysql:host=%DB_HOST%;dbname=%DB_NAME%;charset=utf8mb4'
+              user: '%DB_USER%'
+              password: '%DB_PASSWORD%'

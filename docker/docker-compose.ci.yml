@@ -1,0 +1,47 @@
+# CI overlay: the code is baked into the images and writable directories live in
+# named volumes, so nothing is written back into the checkout by root.
+volumes:
+    ci-log:
+    ci-temp:
+    ci-uploads:
+    ci-assets:
+    ci-tests-output:
+    ci-tests-generated:
+
+services:
+    php:
+        build:
+            context: ..
+            dockerfile: docker/containers/php/Dockerfile.ci
+            args:
+                PHP_VERSION: ${PHP_VERSION:-8.4}
+        volumes: !override
+            - ci-log:/app/log
+            - ci-temp:/app/temp
+            - ci-uploads:/app/uploads
+            - ci-assets:/app/www/assets
+            - ci-tests-output:/app/tests/_output
+            - ci-tests-generated:/app/tests/_support/_generated
+
+    php-test:
+        build:
+            context: ..
+            dockerfile: docker/containers/php/Dockerfile.ci
+            args:
+                PHP_VERSION: ${PHP_VERSION:-8.4}
+        volumes: !override
+            - ci-log:/app/log
+            - ci-temp:/app/temp
+            - ci-uploads:/app/uploads
+            - ci-assets:/app/www/assets
+            - ci-tests-output:/app/tests/_output
+            - ci-tests-generated:/app/tests/_support/_generated
+
+    nginx:
+        build:
+            context: ..
+            dockerfile: docker/containers/nginx/Dockerfile.ci
+        volumes: !override
+            - ci-assets:/app/www/assets:ro
+        depends_on: !override
+            - php-test

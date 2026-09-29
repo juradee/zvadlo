@@ -1,0 +1,12 @@
+services:
+    router: App\Router\RouterFactory::createRouter
+
+    - App\Console\DatabaseDropCommand(appEnv: %appEnv%)
+
+    - App\Model\Skautis\SoapSkautisGateway
+    - App\Model\User\UnitAccessResolver
+    - App\Model\User\CurrentUser
+    - App\Model\User\LoginService
+    - App\Model\Auth\Authorizator
+
+    - App\Presentation\Accessory\EnvironmentInfo(%appEnv%, %testBackground%, %environmentLabel%, %environmentColor%, %releaseHash%)

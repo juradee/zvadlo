@@ -1,0 +1,44 @@
+actor: AcceptanceTester
+modules:
+    enabled:
+        - WebDriver:
+              url: '%APP_BASE_URL%'
+              host: selenium
+              browser: chrome
+              window_size: 1280x900
+              wait: 10
+              capabilities:
+                  goog:chromeOptions:
+                      args:
+                          - '--disable-gpu'
+                          - '--no-sandbox'
+                          - '--lang=cs'
+        - App\Tests\Support\Helper\Acceptance
+        - Db:
+              dsn: 'mysql:host=%DB_HOST%;dbname=%DB_NAME%;charset=utf8mb4'
+              user: '%DB_USER%'
+              password: '%DB_PASSWORD%'
+env:
+    ci:
+        modules:
+            config:
+                WebDriver:
+                    capabilities:
+                        goog:chromeOptions:
+                            args:
+                                - '--headless=new'
+                                - '--disable-gpu'
+                                - '--no-sandbox'
+                                - '--lang=cs'
+    mobile:
+        modules:
+            config:
+                WebDriver:
+                    window_size: 390x844
+                    capabilities:
+                        goog:chromeOptions:
+                            args:
+                                - '--headless=new'
+                                - '--disable-gpu'
+                                - '--no-sandbox'
+                                - '--lang=cs'

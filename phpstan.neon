@@ -1,0 +1,12 @@
+parameters:
+    level: 8
+    paths:
+        - app
+        - bin
+        - packages/skautis-nette/src
+        - tests
+    excludePaths:
+        - tests/_output (?)
+        - tests/Support/_generated (?)
+    treatPhpDocTypesAsCertain: false
+    tmpDir: temp/phpstan

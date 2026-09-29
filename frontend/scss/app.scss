@@ -1,0 +1,25 @@
+// Bootstrap with a small custom theme. Mobile first: everything is designed for a phone and then widened.
+$primary: #1f5f8b;
+$font-size-base: 1rem;
+$enable-negative-margins: true;
+
+@import "bootstrap/scss/bootstrap";
+@import "bootstrap-icons/font/bootstrap-icons.css";
+
+// Environment banner colours (test = yellow, beta = blue), same idea as h.skauting.
+.navbar--test {
+    background-color: #fff7dc !important;
+    border-color: #ecd795 !important;
+}
+
+.navbar--beta {
+    background-color: #e9f2ff !important;
+    border-color: #a9c8ec !important;
+}
+
+// Comfortable tap targets on phones.
+.btn,
+.form-control,
+.form-select {
+    min-height: 2.75rem;
+}

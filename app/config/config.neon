@@ -1,0 +1,65 @@
+includes:
+    - services.neon
+    - doctrine.neon
+
+parameters:
+    appEnv: %envConfig.appEnv%
+    appBaseUrl: %envConfig.appBaseUrl%
+    appSecret: %envConfig.appSecret%
+    releaseHash: %envConfig.releaseHash%
+    sendEmail: %envConfig.sendEmail%
+    systemEmail: %envConfig.systemEmail%
+    errorEmails: %envConfig.errorEmails%
+    mailSmtp: %envConfig.mailSmtp%
+    testBackground: %envConfig.testBackground%
+    environmentLabel: %envConfig.environmentLabel%
+    environmentColor: %envConfig.environmentColor%
+    tracyShowBar: %envConfig.tracyShowBar%
+    database: %envConfig.database%
+    skautisConfig: %envConfig.skautis%
+    google: %envConfig.google%
+    github: %envConfig.github%
+    apiTokens: %envConfig.apiTokens%
+    retentionMonths: %envConfig.retentionMonths%
+    uploadDir: %projectDir%/uploads
+
+php:
+    date.timezone: Europe/Prague
+
+session:
+    autoStart: smart
+    expiration: 14 days
+    savePath: %tempDir%/sessions
+    cookieSamesite: Lax
+
+http:
+    frames: DENY
+
+application:
+    errorPresenter:
+        4xx: Error:Error4xx
+        5xx: Error:Error5xx
+    mapping: App\Presentation\*\**Presenter
+
+latte:
+    strictTypes: true
+    strictParsing: true
+    extensions:
+        - App\Presentation\Accessory\ViteExtension(%projectDir%/www/assets/.vite/manifest.json)
+
+tracy:
+    email: %errorEmails%
+    strictMode: true
+    showBar: %tracyShowBar%
+
+extensions:
+    console: Contributte\Console\DI\ConsoleExtension(%consoleMode%)
+    skautis: Webwings\SkautisNette\DI\SkautisExtension
+
+console:
+    url: %appBaseUrl%
+
+skautis:
+    applicationId: %skautisConfig.applicationId%
+    testMode: %skautisConfig.testMode%
+    fixtures: %skautisConfig.fixtures%

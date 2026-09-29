@@ -1,0 +1,16 @@
+# CI image: the development image with the source code baked in, so that nothing
+# is written back to the checkout by root inside the container.
+ARG PHP_VERSION=8.4
+FROM php:${PHP_VERSION}-fpm-alpine
+
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+RUN install-php-extensions soap intl pdo_mysql zip opcache \
+    && apk add --no-cache bash git unzip
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY docker/containers/php/ini/php.ini /usr/local/etc/php/conf.d/zz-app.ini
+COPY docker/containers/php/ini/www.conf /usr/local/etc/php-fpm.d/zz-app.conf
+
+COPY . /app
+WORKDIR /app
+RUN mkdir -p log temp uploads www/assets tests/_output tests/_support/_generated
