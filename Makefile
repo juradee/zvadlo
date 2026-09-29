@@ -92,6 +92,7 @@ init: ## First-time setup: build, dependencies, database, assets
 	$(MAKE) npm-install
 	$(MAKE) assets
 	$(MAKE) migrate
+	$(MAKE) fixtures
 	@echo "Application: http://$$(grep '^DEV_HOST=' docker/.env | cut -d= -f2)  Mail: http://mail.localhost  Adminer: http://adminer.localhost"
 
 console: ## Run a console command: make console c="migrations:status"
@@ -104,13 +105,14 @@ migration: ## Generate a migration from entity changes
 	$(RUN_PHP) bin/console migrations:diff --no-interaction
 
 fixtures: ## Load development fixtures
-	$(RUN_PHP) bin/console doctrine:fixtures:load --append --no-interaction
+	$(RUN_PHP) bin/console doctrine:fixtures:load --no-interaction
 
 test-unit: ## Unit tests (TEST=tests/unit/Foo/BarTest.php)
 	$(RUN_PHP_TEST) vendor/bin/codecept run unit $(TEST)
 
 test-integration: ## Integration tests against the test database
 	$(COMPOSE) up -d $(TEST_SERVICES)
+	$(MAKE) test-database
 	$(RUN_PHP_TEST) vendor/bin/codecept run integration $(TEST)
 
 test-acceptance: ## Acceptance tests with a visible browser at http://selenium.localhost

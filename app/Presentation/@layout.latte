@@ -10,7 +10,7 @@
 <body>
 <nav n:class="navbar, navbar-expand-md, bg-body-tertiary, border-bottom, $environment->showBanner ? 'navbar--' . $environment->color">
     <div class="container">
-        <a class="navbar-brand" n:href="Home:default">
+        <a class="navbar-brand" n:href=":Home:default">
             <span n:if="$environment->showBanner" class="badge text-bg-warning me-2" title="{$environment->label}" data-test="environment-badge">{$environment->label}</span>
             Zvadlo
         </a>
@@ -21,6 +21,7 @@
             <ul class="navbar-nav ms-auto">
                 {if $user->isLoggedIn()}
                     <li class="nav-item"><a class="nav-link" n:href=":Dashboard:default">Přehled</a></li>
+                    <li class="nav-item"><a class="nav-link" n:href=":Events:Overview:default" data-test="nav-events">Akce</a></li>
                     <li class="nav-item"><span class="nav-link text-body-secondary" data-test="current-role">{$user->getIdentity()->role->displayName}</span></li>
                     <li class="nav-item"><a class="nav-link" n:href=":Auth:out" data-test="logout-link">Odhlásit</a></li>
                 {else}

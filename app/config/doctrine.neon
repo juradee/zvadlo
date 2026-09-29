@@ -18,7 +18,7 @@ dbal:
             serverVersion: mariadb-11.4.0
             defaultTableOptions:
                 charset: utf8mb4
-                collate: utf8mb4_czech_ci
+                collation: utf8mb4_czech_ci
 
 orm:
     managers:

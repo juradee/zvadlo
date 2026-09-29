@@ -1,0 +1,47 @@
+{block title}Vlastní pole – {$event->getName()}{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1">
+    <a n:href=":Events:Overview:default" class="link-secondary">Akce</a> · <a n:href=":Events:Event:default $event->getId()" class="link-secondary">{$event->getName()}</a>
+</div>
+<h1 class="h3 mb-3">Vlastní pole přihlášky</h1>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div n:if="$fields === []" class="alert alert-light border">Přihláška má zatím jen standardní pole (jméno, e-mail, telefon, poznámka).</div>
+        <div class="list-group mb-3" data-test="fields">
+            <div n:foreach="$fields as $field" class="list-group-item" data-test="field-row">
+                <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+                    <div>
+                        <div class="fw-semibold">
+                            {$field->getLabel()}
+                            <span n:if="$field->isRequired()" class="text-danger" title="povinné">*</span>
+                            <span n:if="$field->isHidden()" class="badge text-bg-secondary">skryté</span>
+                        </div>
+                        <div class="small text-body-secondary">
+                            {$field->getType()->label()}
+                            {if $field->getType()->hasOptions()}: {implode(', ', $field->getOptionLabels())}{/if}
+                            {if $field->getHelp() !== null} · {$field->getHelp()}{/if}
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1 align-items-start">
+                        <a n:href="default $event->getId(), pole => $field->getId()" class="btn btn-sm btn-outline-primary">Upravit</a>
+                        {form 'fieldActions-' . $field->getId(), class => 'd-flex gap-1', data-allow-resubmit => true}
+                            {input up}{input down}{input toggle}{input remove}
+                        {/form}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5">
+        <div class="card">
+            <div class="card-header">{$editedField !== null ? 'Upravit pole' : 'Nové pole'}</div>
+            <div class="card-body">
+                {control fieldForm}
+                <a n:if="$editedField !== null" n:href="default $event->getId()" class="btn btn-link px-0">Zrušit úpravu</a>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}

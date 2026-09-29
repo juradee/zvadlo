@@ -4,9 +4,14 @@ services:
     - App\Console\DatabaseDropCommand(appEnv: %appEnv%)
 
     - App\Model\Skautis\SoapSkautisGateway
+    - App\Model\Skautis\EventCodeLists
+    - App\Model\Event\EventRepository
+    - App\Model\Event\SlugGenerator
+    - App\Model\Event\EventService
     - App\Model\User\UnitAccessResolver
     - App\Model\User\CurrentUser
     - App\Model\User\LoginService
     - App\Model\Auth\Authorizator
+    - App\Presentation\Accessory\Form\FormFactory
 
     - App\Presentation\Accessory\EnvironmentInfo(%appEnv%, %testBackground%, %environmentLabel%, %environmentColor%, %releaseHash%)

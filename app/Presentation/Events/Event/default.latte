@@ -1,0 +1,65 @@
+{block title}{$event->getName()}{/block}
+
+{block content}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
+    <div>
+        <div class="small text-body-secondary"><a n:href=":Events:Overview:default" class="link-secondary">Akce</a> · {$unit?->displayName ?? $event->getUnitId()}</div>
+        <h1 class="h3 mb-1" data-test="event-name">{$event->getName()}</h1>
+        <p class="mb-0">
+            <span class="badge {$event->getState()->badgeClass()}" data-test="event-state">{$event->getState()->label()}</span>
+            <span n:if="$event->isCamp()" class="badge text-bg-info">tábor</span>
+            <span class="ms-2">{$event->getDateFrom()|date:'j. n. Y'}{if $event->getDateTo() != $event->getDateFrom()} – {$event->getDateTo()|date:'j. n. Y'}{/if}</span>
+            <span n:if="$event->getPlace() !== null" class="ms-2">· {$event->getPlace()}</span>
+        </p>
+    </div>
+    <div n:if="$canEdit" class="d-flex flex-wrap gap-2">
+        <a n:href="edit $event->getId()" class="btn btn-outline-primary" data-test="edit-event">Upravit</a>
+        <a n:href=":Events:Field:default $event->getId()" class="btn btn-outline-primary" data-test="edit-fields">Vlastní pole ({count($event->getVisibleFields())})</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header">Informace</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Typ a rozsah</dt><dd class="col-sm-8">{$typeName}, {$scopeName}</dd>
+                    <dt class="col-sm-4">Uzávěrka přihlášek</dt><dd class="col-sm-8">{if $event->getRegistrationDeadline() !== null}{$event->getRegistrationDeadline()|date:'j. n. Y'}{else}do začátku akce{/if}</dd>
+                    <dt class="col-sm-4">Zámek úprav</dt><dd class="col-sm-8">{$event->getEditLockDays()} dní před akcí, tj. od {$event->getEditLockDate()|date:'j. n. Y'}{if $editLocked} <span class="badge text-bg-warning">úpravy účastníků jsou zamčené</span>{/if}</dd>
+                    <dt class="col-sm-4">Kapacita</dt><dd class="col-sm-8">{$event->getCapacity() ?? 'bez omezení'}</dd>
+                    <dt class="col-sm-4">Cena</dt><dd class="col-sm-8">{if $event->getPrice() !== null}{$event->getPrice()} Kč{else}neuvedena{/if}</dd>
+                    <dt class="col-sm-4">Kontakt</dt><dd class="col-sm-8">{$event->getContactName()}, {$event->getContactEmail()}{if $event->getContactPhone() !== null}, {$event->getContactPhone()}{/if}</dd>
+                    <dt class="col-sm-4">Adresa akce</dt><dd class="col-sm-8"><code>/{$event->getUnitId()}/{$event->getSlug()}</code></dd>
+                </dl>
+            </div>
+        </div>
+        <div n:if="$event->getDescription() !== null" class="card">
+            <div class="card-header">Popis</div>
+            <div class="card-body">{$event->getDescription()|breaklines}</div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div n:if="$canEdit" class="card mb-3">
+            <div class="card-header">Stav akce</div>
+            <div class="card-body d-grid gap-2" data-test="state-form">
+                {form stateForm}
+                    {foreach $form->getComponents() as $button}
+                        {input $button}
+                    {/foreach}
+                {/form}
+                <p n:if="$event->getState() === App\Model\Event\EventState::Archived" class="mb-0 text-body-secondary small">Archivovaná akce je jen ke čtení.</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Vlastní pole přihlášky</div>
+            <ul class="list-group list-group-flush" data-test="field-list">
+                <li n:foreach="$event->getVisibleFields() as $field" class="list-group-item">
+                    {$field->getLabel()} <span class="text-body-secondary small">({$field->getType()->label()}{if $field->isRequired()}, povinné{/if})</span>
+                </li>
+                <li n:if="$event->getVisibleFields() === []" class="list-group-item text-body-secondary">Zatím žádná; přihláška má jen standardní pole.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{/block}

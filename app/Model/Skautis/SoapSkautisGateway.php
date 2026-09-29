@@ -138,6 +138,29 @@ final class SoapSkautisGateway implements SkautisGateway
         return $units;
     }
 
+    public function getEventTypes(): array
+    {
+        return $this->codeList($this->call(WebServiceName::EVENTS, 'EventGeneralTypeAll'));
+    }
+
+    public function getEventScopes(): array
+    {
+        return $this->codeList($this->call(WebServiceName::EVENTS, 'EventGeneralScopeAll'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function codeList(mixed $result): array
+    {
+        $items = [];
+        foreach ($this->objects($result) as $item) {
+            $items[self::string($item, 'ID')] = self::string($item, 'DisplayName');
+        }
+
+        return $items;
+    }
+
     private function unit(stdClass $unit): Unit
     {
         $parentId = $unit->ID_UnitParent ?? null;

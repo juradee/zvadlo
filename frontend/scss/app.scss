@@ -2,6 +2,8 @@
 $primary: #1f5f8b;
 $font-size-base: 1rem;
 $enable-negative-margins: true;
+// Smooth scrolling animates scrollIntoView, which breaks WebDriver clicks and gains nothing here.
+$enable-smooth-scroll: false;
 
 @import "bootstrap/scss/bootstrap";
 @import "bootstrap-icons/font/bootstrap-icons.css";

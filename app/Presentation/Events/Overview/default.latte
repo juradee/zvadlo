@@ -1,0 +1,51 @@
+{block title}Akce{/block}
+
+{block content}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+    <h1 class="h3 mb-0">Akce</h1>
+    <a n:if="$editableUnits !== []" n:href=":Events:Event:create" class="btn btn-primary" data-test="create-event">Nová akce</a>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3" data-allow-resubmit>
+    <div class="col-6 col-md-2">
+        <label for="filter-year" class="form-label small mb-1">Rok</label>
+        <select id="filter-year" name="rok" class="form-select" onchange="this.form.requestSubmit()">
+            <option n:foreach="$years as $y" value="{$y}" n:attr="selected: $y === $year">{$y}</option>
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <label for="filter-state" class="form-label small mb-1">Stav</label>
+        <select id="filter-state" name="stav" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">všechny</option>
+            <option n:foreach="$states as $s" value="{$s->value}" n:attr="selected: $s === $state">{$s->label()}</option>
+        </select>
+    </div>
+    <noscript><div class="col-auto"><button class="btn btn-outline-secondary">Filtrovat</button></div></noscript>
+</form>
+
+<div n:if="$events === []" class="alert alert-light border" data-test="no-events">
+    V roce {$year} zatím žádná akce{if $state !== null} ve stavu „{$state->label()}“{/if}.
+</div>
+
+<div class="list-group" data-test="event-list">
+    <a n:foreach="$events as $event" n:href=":Events:Event:default $event->getId()" class="list-group-item list-group-item-action py-3" data-test="event-item">
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+            <div>
+                <div class="fw-semibold">{$event->getName()}</div>
+                <div class="small text-body-secondary">
+                    {$event->getDateFrom()|date:'j. n. Y'}{if $event->getDateTo() != $event->getDateFrom()} – {$event->getDateTo()|date:'j. n. Y'}{/if}
+                    {if $event->getPlace() !== null} · {$event->getPlace()}{/if}
+                    · {isset($units[$event->getUnitId()]) ? $units[$event->getUnitId()]->displayName : $event->getUnitId()}
+                </div>
+                <div n:if="isset($overlaps[$event->getId()])" class="small text-warning-emphasis" data-test="overlap-warning">
+                    Termín se kryje s: {implode(', ', $overlaps[$event->getId()])}
+                </div>
+            </div>
+            <div class="text-md-end">
+                <span class="badge {$event->getState()->badgeClass()}">{$event->getState()->label()}</span>
+                <span n:if="$event->isCamp()" class="badge text-bg-info">tábor</span>
+            </div>
+        </div>
+    </a>
+</div>
+{/block}

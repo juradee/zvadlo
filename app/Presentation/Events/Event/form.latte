@@ -1,0 +1,15 @@
+{block title}{$event !== null ? 'Upravit akci' : 'Nová akce'}{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1">
+    <a n:href=":Events:Overview:default" class="link-secondary">Akce</a>
+    {if $event !== null} · <a n:href="default $event->getId()" class="link-secondary">{$event->getName()}</a>{/if}
+</div>
+<h1 class="h3 mb-3">{$event !== null ? 'Upravit akci' : 'Nová akce'}</h1>
+
+<div class="row">
+    <div class="col-12 col-lg-8">
+        {control eventForm}
+    </div>
+</div>
+{/block}

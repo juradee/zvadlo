@@ -55,4 +55,18 @@ interface SkautisGateway
      * @return list<Unit>
      */
     public function getChildUnits(int $unitId): array;
+
+    /**
+     * Types of general events (Events.EventGeneralTypeAll).
+     *
+     * @return array<string, string> id => name
+     */
+    public function getEventTypes(): array;
+
+    /**
+     * Scopes of general events (Events.EventGeneralScopeAll).
+     *
+     * @return array<string, string> id => name
+     */
+    public function getEventScopes(): array;
 }

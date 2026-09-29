@@ -62,8 +62,9 @@ https://zvadlo.skauting.cz/api/v1/…                          API pro h.skautin
 - **token** přihlášky je osobní (jeden na pozvaného na akci). Nikdy se neposílá dál, e-mail s ním je
   určený jen adresátovi. Otevření přihlášky navíc vyžaduje **datum narození** účastníka (u dítěte rodič
   zadá datum narození dítěte). Nečlen datum narození nezadává; jeho token je jediné ověření.
-- Tokeny mají 32 bajtů náhody (base64url), v databázi se ukládá jen jejich SHA-256 hash.
-  Ověření probíhá přes hash, takže únik databáze neprozradí funkční odkazy.
+- Tokeny mají 32 bajtů náhody (base64url). Osobní token přihlášky se v databázi ukládá jen jako SHA-256 hash
+  a ověřuje se přes hash, takže únik databáze neprozradí funkční osobní odkazy. Token miniwebu se ukládá
+  v otevřené podobě, protože ho vedoucí potřebuje zobrazit a poslat; jeho únik odkryje jen obsah miniwebu.
 - Po pěti neúspěšných ověřeních data narození se odkaz na 15 minut zablokuje (ochrana proti hádání).
 
 Miniweb neobsahuje přísně tajné informace, ale ani sraz dětí nemá být veřejně dohledatelný.

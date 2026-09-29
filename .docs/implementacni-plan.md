@@ -330,3 +330,4 @@ Průběžně:
 | Datum | Stav |
 |---|---|
 | 29. 9. 2026 | Jádro `skaut/skautis` 3.1 hotové (v3.1.0 na GitHubu). Fáze 0 hotová: docker stack, Makefile, prostředí, Nette kostra s Vite a Bootstrapem, Doctrine přes nettrine, balíček `packages/skautis-nette` s fixturami, přihlášení přes skautIS s přepínáním role a výpočtem přístupu k jednotkám, Codeception (unit, integration, acceptance) a GitHub Actions. |
+| 29. 9. 2026 | Fáze 1 hotová: entity `Event`, `EventField`, `EventFieldOption` s migrací, stavy akce a zámek úprav, generátor slugu, číselníky typů a rozsahů ze skautISu s cache, přehled akcí s filtrem a upozorněním na kolizi termínů, formulář akce s Bootstrap rendererem, správa vlastních polí (přidání, úprava, skrytí, pořadí, smazání), oprávnění podle jednotek (403), fixtury pro vývoj, unit, integrační a akceptační testy. |

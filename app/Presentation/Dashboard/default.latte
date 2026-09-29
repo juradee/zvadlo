@@ -19,6 +19,20 @@
     </form>
 </div>
 
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Nejbližší akce</span>
+        <a n:href=":Events:Overview:default" class="small">Všechny akce</a>
+    </div>
+    <ul class="list-group list-group-flush" data-test="upcoming-events">
+        <li n:foreach="$upcoming as $event" class="list-group-item d-flex justify-content-between align-items-center">
+            <a n:href=":Events:Event:default $event->getId()">{$event->getName()}</a>
+            <span class="small text-body-secondary">{$event->getDateFrom()|date:'j. n. Y'} <span class="badge {$event->getState()->badgeClass()}">{$event->getState()->label()}</span></span>
+        </li>
+        <li n:if="$upcoming === []" class="list-group-item text-body-secondary">Žádná nadcházející akce. <a n:if="$editUnits !== []" n:href=":Events:Event:create">Založit akci</a></li>
+    </ul>
+</div>
+
 <div class="row g-3">
     <div class="col-12 col-md-6">
         <div class="card h-100">
