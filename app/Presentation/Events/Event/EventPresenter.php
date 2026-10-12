@@ -71,9 +71,11 @@ final class EventPresenter extends SecuredPresenter
         $this->template->event = $event;
         $this->template->unit = $access->read[$event->getUnitId()] ?? null;
         $this->template->canEdit = $this->authorizator->canEditUnit($event->getUnitId());
-        $this->template->typeName = $event->isCamp() ? 'tábor' : ($this->codeLists->getEventTypes()[$event->getSkautisTypeId()] ?? $event->getSkautisTypeId());
+        $typeId = $event->getSkautisTypeId();
+        $this->template->typeName = $event->isCamp() ? 'tábor' : ($typeId === null ? 'neuveden' : ($this->codeLists->getEventTypes()[$typeId] ?? $typeId));
         $this->template->skautisUrl = $this->links->event($event);
-        $this->template->scopeName = $event->isCamp() ? 'ze skautISu' : ($this->codeLists->getEventScopes()[$event->getSkautisScopeId()] ?? $event->getSkautisScopeId());
+        $scopeId = $event->getSkautisScopeId();
+        $this->template->scopeName = $event->isCamp() ? 'ze skautISu' : ($scopeId === null ? 'neuveden' : ($this->codeLists->getEventScopes()[$scopeId] ?? $scopeId));
         $this->template->registrationOpen = $event->isRegistrationOpen(new DateTimeImmutable());
         $this->template->counts = $counts;
         $this->template->total = array_sum($counts) - $counts[RegistrationState::Rejected->value];
