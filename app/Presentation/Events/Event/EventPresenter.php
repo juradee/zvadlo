@@ -295,7 +295,8 @@ final class EventPresenter extends SecuredPresenter
         $form->addText('contactPhone', 'Telefon kontaktní osoby')
             ->setNullable()
             ->addRule($form::MaxLength, 'Telefon může mít nejvýše %d znaků.', 50);
-        $form->addSubmit('save', $event === null ? ($camp === null ? 'Založit akci' : 'Založit tábor') : 'Uložit změny');
+        $form->addSubmit('save', $event === null ? ($camp === null ? 'Založit akci' : 'Založit tábor') : 'Uložit změny')
+            ->setHtmlAttribute('data-test', 'event-submit');
 
         if ($event !== null) {
             $form->setDefaults([

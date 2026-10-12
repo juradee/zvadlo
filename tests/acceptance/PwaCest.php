@@ -42,7 +42,7 @@ final class PwaCest
         $I->fillDate('dateFrom', '2027-06-05');
         $I->fillDate('dateTo', '2027-06-05');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit akci');
+        $I->clickByJs('[data-test="event-submit"]');
         $I->waitForText('Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
         $listPath = '/akce/'.$eventId.'/prihlasky';

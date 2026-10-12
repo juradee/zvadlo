@@ -49,12 +49,12 @@
                     <div class="accordion" id="templates">
                         <div n:foreach="$templates as $key => $item" class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#template-{$key}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#template-{$key}" data-test="template-{$key}-toggle">
                                     {$item['type']->label()}
                                     <span n:if="$item['custom']" class="badge text-bg-light border ms-2">vlastní text</span>
                                 </button>
                             </h2>
-                            <div id="template-{$key}" class="accordion-collapse collapse" data-bs-parent="#templates">
+                            <div id="template-{$key}" class="accordion-collapse collapse" data-bs-parent="#templates" data-test="template-{$key}-panel">
                                 <div class="accordion-body">
                                     <p class="small text-body-secondary">{$item['type']->description()}</p>
                                     <div class="mb-3">

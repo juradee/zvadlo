@@ -22,7 +22,7 @@ final class MailingCest
         $I->fillDate('dateFrom', '2027-10-15');
         $I->fillDate('dateTo', '2027-10-17');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit akci');
+        $I->clickByJs('[data-test="event-submit"]');
         $I->waitForText('Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
 
@@ -77,7 +77,8 @@ final class MailingCest
         $I->waitForText('Nastavení jednotky bylo uloženo', 10);
         $I->seeInField('agreementText', 'Souhlasím s účastí a pravidly oddílu.');
 
-        $I->click('Zamítnutí přihlášky');
+        $I->click('[data-test="template-rejected-toggle"]');
+        $I->waitForElementVisible('[data-test="template-rejected-panel"].show input[name="rejected[subject]"]', 5);
         $I->fillField('rejected[subject]', 'Bohužel: %akce%');
         $I->click('Uložit výchozí texty');
         $I->waitForText('Výchozí texty e-mailů byly uloženy', 10);
@@ -85,7 +86,8 @@ final class MailingCest
         $I->seeNumberOfElements('[data-test="template-form"] .badge', 1);
         $I->seeInField('rejected[subject]', 'Bohužel: %akce%');
 
-        $I->click('Zamítnutí přihlášky');
+        $I->click('[data-test="template-rejected-toggle"]');
+        $I->waitForElementVisible('[data-test="template-rejected-panel"].show input[name="rejected[subject]"]', 5);
         $I->waitForElementVisible('[data-test="reset-template-rejected"]', 5);
         $I->click('[data-test="reset-template-rejected"]');
         $I->acceptPopup();

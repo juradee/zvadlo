@@ -32,7 +32,7 @@ final class EventCest
         $I->fillField('dateTo', '11.04.2027');
         $I->fillField('place', 'Chata Ostrá');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit akci');
+        $I->clickByJs('[data-test="event-submit"]');
 
         $I->waitForText('Akce byla založena', 10);
         $I->seeInCurrentUrl('/akce/');
@@ -107,7 +107,7 @@ final class EventCest
         $I->seeCheckboxIsChecked('waitlistEnabled');
         $I->uncheckOption('waitlistEnabled');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit akci');
+        $I->clickByJs('[data-test="event-submit"]');
         $I->waitForText('Akce byla založena', 10);
         $I->see('do konce akce (01.05.2027)', '[data-test="deadline"]');
         $I->see('20, bez čekací listiny', '[data-test="capacity"]');

@@ -23,7 +23,7 @@ final class WebCest
         $I->fillField('place', 'Chata Ostrá');
         $I->fillField('description', "Sraz **v pátek** v 16:30.\n\nNávrat v neděli.");
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit akci');
+        $I->clickByJs('[data-test="event-submit"]');
         $I->waitForText('Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
         $I->click('Otevřít přihlašování');

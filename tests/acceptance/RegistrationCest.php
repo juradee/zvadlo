@@ -230,7 +230,7 @@ final class RegistrationCest
             $I->fillField('capacity', (string) $capacity);
         }
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit akci');
+        $I->clickByJs('[data-test="event-submit"]');
         $I->waitForText('Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
 

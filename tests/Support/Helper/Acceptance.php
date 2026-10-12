@@ -106,46 +106,43 @@ final class Acceptance extends Module
     }
 
     /**
-     * Clicks through JavaScript: a plain WebDriver click on a button that navigates right away sometimes
-     * fails with "node does not belong to the document" while the page is being replaced.
+     * Clicks a control which replaces the document and waits until that control no longer belongs to it.
      */
     public function clickByJs(string $selector): void
     {
         $json = json_encode($selector, \JSON_THROW_ON_ERROR);
-        // The marker lives on the current document only: once it is gone, the click navigated away.
-        $click = \sprintf('window.__zvadloClickPending = true; window.setTimeout(() => document.querySelector(%s).click(), 0);', $json);
-        $pending = \sprintf('return window.__zvadloClickPending === true && document.querySelector(%s) !== null;', $json);
-
-        try {
-            $this->webDriver()->executeJS($click);
-
-            return;
-        } catch (WebDriverException $exception) {
-            if (! str_contains($exception->getMessage(), 'does not belong to the document')) {
-                throw $exception;
-            }
-        }
-
-        // ChromeDriver lost the document while the click was being sent. Decide from the page itself whether
-        // the click already happened; a page reloading itself (contact lookup) may need a few polls.
+        $click = \sprintf('const target = document.querySelector(%s); if (target === null) return false; target.click(); return true;', $json);
+        $exists = \sprintf('return document.querySelector(%s) !== null;', $json);
         $deadline = microtime(true) + 10;
+        $clicked = false;
         while (microtime(true) < $deadline) {
-            usleep(300000);
             try {
-                if ($this->webDriver()->executeJS($pending) !== true) {
+                if (! $clicked) {
+                    if ($this->webDriver()->executeJS($click) !== true) {
+                        throw new RuntimeException('The click target '.$selector.' is not present.');
+                    }
+                    $clicked = true;
+                }
+                if ($this->webDriver()->executeJS($exists) !== true) {
                     return;
                 }
-                $this->webDriver()->executeJS($click);
-
-                return;
             } catch (WebDriverException $exception) {
-                if (! str_contains($exception->getMessage(), 'does not belong to the document')) {
+                if (! $this->isDocumentReplacementError($exception)) {
                     throw $exception;
                 }
             }
+            usleep(100000);
         }
 
         throw new RuntimeException('The click on '.$selector.' could not be confirmed within 10 seconds.');
+    }
+
+    private function isDocumentReplacementError(WebDriverException $exception): bool
+    {
+        $message = $exception->getMessage();
+
+        return str_contains($message, 'does not belong to the document')
+            || str_contains($message, 'Node with given id does not belong to the document');
     }
 
     public function clearMailpit(): void

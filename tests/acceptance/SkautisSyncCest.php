@@ -21,7 +21,7 @@ final class SkautisSyncCest
         $I->fillDate('dateFrom', '2027-05-15');
         $I->fillDate('dateTo', '2027-05-15');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit akci');
+        $I->clickByJs('[data-test="event-submit"]');
         $I->waitForText('Akce byla založena', 10);
         $I->see('zatím nepropsaná', '[data-test="skautis-event"]');
 

@@ -23,7 +23,7 @@ final class SkautisParticipantCest
         $I->fillDate('dateTo', '2027-06-12');
         $I->selectOption('publicRegistration', 'jen přes skautIS');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit akci');
+        $I->clickByJs('[data-test="event-submit"]');
         $I->waitForText('Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
         $I->click('Otevřít přihlašování');

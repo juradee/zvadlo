@@ -56,7 +56,7 @@ final class ResponsiveCest
         $I->fillDate('dateTo', '2027-04-11');
         $I->selectOption('publicRegistration', 'open');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit akci');
+        $I->clickByJs('[data-test="event-submit"]');
         $I->waitForText('Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
         $I->amOnPage('/akce/'.$eventId.'/pole');
