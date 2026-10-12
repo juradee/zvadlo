@@ -33,44 +33,48 @@ final class RetryingSkautisCallTest extends Unit
     {
         $attempts = 0;
 
+        $this->expectException(WsdlException::class);
+        $this->expectExceptionMessage('Connection timed out');
         try {
             (new RetryingSkautisCall())->run(static function () use (&$attempts): never {
                 ++$attempts;
 
                 throw new WsdlException('Connection timed out');
             });
-            self::fail('The third transport error must be propagated.');
-        } catch (WsdlException $exception) {
-            self::assertSame('Connection timed out', $exception->getMessage());
+        } finally {
+            self::assertSame(3, $attempts);
         }
-
-        self::assertSame(3, $attempts);
     }
 
-    public function testDoesNotRetryAuthenticationOrBusinessErrors(): void
+    public function testDoesNotRetryAuthenticationErrors(): void
     {
-        $authenticationAttempts = 0;
+        $attempts = 0;
+
+        $this->expectException(AuthenticationException::class);
         try {
-            (new RetryingSkautisCall())->run(static function () use (&$authenticationAttempts): never {
-                ++$authenticationAttempts;
+            (new RetryingSkautisCall())->run(static function () use (&$attempts): never {
+                ++$attempts;
 
                 throw new AuthenticationException('Přihlášení vypršelo.');
             });
-            self::fail('Authentication errors must be propagated.');
-        } catch (AuthenticationException) {
+        } finally {
+            self::assertSame(1, $attempts);
         }
-        self::assertSame(1, $authenticationAttempts);
+    }
 
-        $businessAttempts = 0;
+    public function testDoesNotRetryBusinessErrors(): void
+    {
+        $attempts = 0;
+
+        $this->expectException(WsdlException::class);
         try {
-            (new RetryingSkautisCall())->run(static function () use (&$businessAttempts): never {
-                ++$businessAttempts;
+            (new RetryingSkautisCall())->run(static function () use (&$attempts): never {
+                ++$attempts;
 
                 throw new WsdlException('Server was unable to process request.', 0, new RuntimeException('invalid input'));
             });
-            self::fail('Business errors must be propagated.');
-        } catch (WsdlException) {
+        } finally {
+            self::assertSame(1, $attempts);
         }
-        self::assertSame(1, $businessAttempts);
     }
 }
