@@ -9,6 +9,12 @@ volumes:
     ci-tests-generated:
 
 services:
+    traefik:
+        networks:
+            default:
+                aliases: !override
+                    - moje-hospodareni.cz
+
     php:
         build:
             context: ..
@@ -36,6 +42,8 @@ services:
             - ci-assets:/app/www/assets
             - ci-tests-output:/app/tests/_output
             - ci-tests-generated:/app/tests/_support/_generated
+        environment:
+            APP_BASE_URL: http://moje-hospodareni.cz
 
     nginx:
         image: ${COMPOSE_PROJECT_NAME:-zvadlo}-nginx-ci
@@ -47,3 +55,5 @@ services:
             - ./containers/nginx/conf.d:/etc/nginx/conf.d:ro
         depends_on: !override
             - php-test
+        labels:
+            traefik.http.routers.app.rule: Host(`moje-hospodareni.cz`)

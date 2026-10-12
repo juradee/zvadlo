@@ -26,6 +26,7 @@ env:
         modules:
             config:
                 WebDriver:
+                    url: 'http://moje-hospodareni.cz'
                     capabilities:
                         goog:chromeOptions:
                             args:

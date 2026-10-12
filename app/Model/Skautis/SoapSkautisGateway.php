@@ -30,8 +30,30 @@ final class SoapSkautisGateway implements SkautisGateway
     /** Extend the login when less than this many seconds remain. */
     private const int REFRESH_BEFORE_EXPIRY = 20 * 60;
 
-    public function __construct(private readonly Skautis $skautis)
-    {
+    /** @var list<string> */
+    private const array RETRYABLE_READ_METHODS = [
+        'ActionVerify',
+        'EventCampAll',
+        'EventCampDetail',
+        'EventGeneralScopeAll',
+        'EventGeneralTypeAll',
+        'ParticipantCampAll',
+        'ParticipantGeneralAll',
+        'PersonAll',
+        'PersonContactAll',
+        'PersonDetail',
+        'PersonParentAll',
+        'PersonParentAllPersonChildren',
+        'UnitAll',
+        'UnitDetail',
+        'UserDetail',
+        'UserRoleAll',
+    ];
+
+    public function __construct(
+        private readonly Skautis $skautis,
+        private readonly RetryingSkautisCall $retryingCall,
+    ) {
     }
 
     public function getLoginUrl(string $backlink = ''): string
@@ -58,13 +80,13 @@ final class SoapSkautisGateway implements SkautisGateway
         $user = $this->skautis->getUser();
 
         try {
-            if (! $user->isLoggedIn()) {
+            if (! $this->retryingCall->run($user->isLoggedIn(...))) {
                 return false;
             }
 
             $logoutDate = $user->getLogoutDate();
             if ($logoutDate !== null && $logoutDate->getTimestamp() - time() < self::REFRESH_BEFORE_EXPIRY) {
-                $user->updateLogoutTime();
+                $this->retryingCall->run($user->updateLogoutTime(...));
             }
 
             return true;
@@ -79,7 +101,7 @@ final class SoapSkautisGateway implements SkautisGateway
     public function refreshLogin(): void
     {
         try {
-            $this->skautis->getUser()->updateLogoutTime();
+            $this->retryingCall->run($this->skautis->getUser()->updateLogoutTime(...));
         } catch (AuthenticationException|UnexpectedValueException $exception) {
             throw new SkautisException('The skautIS login has expired.', 0, $exception);
         } catch (WsdlException $exception) {
@@ -499,7 +521,9 @@ final class SoapSkautisGateway implements SkautisGateway
     private function call(string $service, string $method, array $arguments = [], ?string $wrapper = null): mixed
     {
         try {
-            return $this->skautis->getWebService($service)->call($method, $wrapper === null ? [$arguments] : [$arguments, $wrapper]);
+            $call = fn (): mixed => $this->skautis->getWebService($service)->call($method, $wrapper === null ? [$arguments] : [$arguments, $wrapper]);
+
+            return \in_array($method, self::RETRYABLE_READ_METHODS, true) ? $this->retryingCall->run($call) : $call();
         } catch (AuthenticationException|PermissionException $exception) {
             throw $exception;
         } catch (WsdlException $exception) {

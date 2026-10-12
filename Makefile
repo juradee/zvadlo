@@ -31,6 +31,7 @@ RUN_NODE     = $(COMPOSE) run --rm -T $(DOCKER_USER) node
 APP_SERVICES  = traefik php scheduler nginx mariadb mailpit adminer
 TEST_SERVICES = mariadb-test mailpit php-test
 ACCEPTANCE_SERVICES = traefik mariadb-test mailpit selenium nginx php-test
+ACCEPTANCE_BASE_URL ?= http://moje-hospodareni.cz
 
 TEST ?=
 
@@ -39,6 +40,17 @@ define wait_for_selenium
 		if $(COMPOSE) exec -T selenium wget -q -O - http://localhost:4444/wd/hub/status 2>/dev/null | grep -q '"ready":[[:space:]]*true'; then exit 0; fi; \
 		echo "Waiting for Selenium... ($$i/30)"; sleep 2; \
 	done; echo "Selenium did not become ready in time."; exit 1
+endef
+
+define wait_for_application
+	@for i in $$(seq 1 30); do \
+		if $(COMPOSE) exec -T selenium sh -lc "wget -S --header='Cookie: SELENIUM=SELENIUM' -O /dev/null $(ACCEPTANCE_BASE_URL)/ 2>&1 | grep -q 'HTTP/[0-9.][0-9.]* 200'"; then exit 0; fi; \
+		echo "Waiting for the application through Traefik... ($$i/30)"; sleep 2; \
+	done; \
+	echo "The application did not become reachable through Traefik."; \
+	$(COMPOSE) ps; \
+	$(COMPOSE) logs --tail=100 traefik nginx php-test || true; \
+	exit 1
 endef
 
 .PHONY: help build up down restart ps logs enter clean-cache composer-install composer-update init \
@@ -131,12 +143,14 @@ test-acceptance: prepare-writable-dirs ## Acceptance tests with a visible browse
 	$(COMPOSE) up -d $(ACCEPTANCE_SERVICES)
 	$(call wait_for_selenium)
 	$(MAKE) test-database
+	$(call wait_for_application)
 	$(RUN_PHP_TEST) vendor/bin/codecept run acceptance -vv $(TEST); status=$$?; $(COMPOSE) stop selenium; exit $$status
 
 ci-acceptance: prepare-writable-dirs ## Acceptance tests headless (CI)
 	$(COMPOSE) up -d $(ACCEPTANCE_SERVICES)
 	$(call wait_for_selenium)
 	$(MAKE) test-database
+	$(call wait_for_application)
 	$(RUN_PHP_TEST) vendor/bin/codecept run acceptance --env ci -vv $(TEST); status=$$?; $(COMPOSE) stop selenium; exit $$status
 
 test-mapping: prepare-writable-dirs ## Entity mapping must match the migrations (migrations:diff must find no changes)

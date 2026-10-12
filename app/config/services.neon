@@ -4,6 +4,7 @@ services:
     - App\Console\DatabaseDropCommand(appEnv: %appEnv%)
 
     - App\Model\Skautis\SoapSkautisGateway
+    - App\Model\Skautis\RetryingSkautisCall
     - App\Model\Skautis\EventCodeLists
     - App\Model\Skautis\SkautisLinks
     - App\Model\Skautis\MemberDirectory
