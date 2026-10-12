@@ -38,6 +38,7 @@ services:
             - ci-tests-generated:/app/tests/_support/_generated
 
     nginx:
+        image: ${COMPOSE_PROJECT_NAME:-zvadlo}-nginx-ci
         build:
             context: ..
             dockerfile: docker/containers/nginx/Dockerfile.ci

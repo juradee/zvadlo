@@ -91,7 +91,7 @@ jobs:
         run: npm ci && npm run check-types && npm run build
 
       - name: Build images
-        run: make build
+        run: docker compose build php-test nginx
 
       - name: Acceptance tests
         run: make ci-acceptance
