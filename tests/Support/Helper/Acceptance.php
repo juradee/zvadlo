@@ -137,6 +137,31 @@ final class Acceptance extends Module
         throw new RuntimeException('The click on '.$selector.' could not be confirmed within 10 seconds.');
     }
 
+    /**
+     * Waits for text without retaining a WebDriver element from the document being replaced.
+     */
+    public function waitForPageText(string $text, int $timeout = 10): void
+    {
+        $textJson = json_encode($text, \JSON_THROW_ON_ERROR);
+        $containsText = \sprintf('return document.body !== null && document.body.innerText.includes(%s);', $textJson);
+        $deadline = microtime(true) + $timeout;
+
+        while (microtime(true) < $deadline) {
+            try {
+                if ($this->webDriver()->executeJS($containsText) === true) {
+                    return;
+                }
+            } catch (WebDriverException $exception) {
+                if (! $this->isDocumentReplacementError($exception)) {
+                    throw $exception;
+                }
+            }
+            usleep(100000);
+        }
+
+        throw new RuntimeException('The text '.$text.' did not appear within '.$timeout.' seconds.');
+    }
+
     private function isDocumentReplacementError(WebDriverException $exception): bool
     {
         $message = $exception->getMessage();

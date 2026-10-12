@@ -61,7 +61,7 @@ final class RegistrationCest
         $I->seeInTitle('Ověření');
         $I->fillDate('birthDate', '2015-03-13');
         $I->click('Pokračovat');
-        $I->waitForText('Datum narození nesouhlasí', 10);
+        $I->waitForPageText('Datum narození nesouhlasí', 10);
         $I->fillDate('birthDate', '2015-03-12');
         $I->click('Pokračovat');
         $I->waitForElement('input[name="attending"]', 10);
@@ -154,7 +154,7 @@ final class RegistrationCest
         $I->dontSee('Datum narození účastníka');
         $I->fillField('email', 'jiny@example.cz');
         $I->click('Pokračovat');
-        $I->waitForText('E-mail nesouhlasí', 10);
+        $I->waitForPageText('E-mail nesouhlasí', 10);
         $I->fillField('email', 'eliska@example.cz');
         $I->click('Pokračovat');
         $I->waitForElement('input[name="attending"]', 10);
