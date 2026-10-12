@@ -25,3 +25,14 @@ $enable-smooth-scroll: false;
 .form-select {
     min-height: 2.75rem;
 }
+
+// The native date input behind the calendar button: rendered (showPicker() needs that) but invisible.
+.date-picker-native {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}

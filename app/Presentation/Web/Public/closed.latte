@@ -1,0 +1,19 @@
+{block title}Přihlašování neběží – {$event->getName()}{/block}
+
+{block content}
+{include '@header.latte'}
+<div class="alert alert-warning" data-test="closed">
+    {if $event->getState() === App\Model\Event\EventState::Draft}
+        Přihlašování na tuto akci ještě nezačalo. Zkuste to později, nebo se ozvěte vedoucímu.
+    {elseif $event->getState() !== App\Model\Event\EventState::Open}
+        Přihlašování na tuto akci je uzavřené.
+    {elseif $event->getRegistrationDeadline() !== null && ! $event->isRegistrationOpen($now)}
+        Přihlašování na tuto akci skončilo, uzávěrka byla {$event->getRegistrationDeadline()|date:'d.m.Y'}.
+    {elseif ! $event->isRegistrationOpen($now)}
+        Akce už skončila.
+    {else}
+        Veřejné přihlašování na tuto akci není zapnuté.
+    {/if}
+</div>
+<p class="text-body-secondary">Ozvěte se vedoucímu: {$event->getContactName()}, <a href="mailto:{$event->getContactEmail()}">{$event->getContactEmail()}</a>{if $event->getContactPhone() !== null}, {$event->getContactPhone()}{/if}.</p>
+{/block}

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Model\Event;
 
+use App\Model\Mailing\EmailTemplate;
+use App\Model\Mailing\EmailType;
+use App\Model\Mailing\GoogleOAuth;
+use App\Model\Skautis\Dto\Camp;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -33,14 +37,12 @@ class Event
     #[ORM\Column(length: 100)]
     private string $slug;
 
-    #[ORM\Column(length: 50)]
-    private string $skautisTypeId;
+    /** Type and scope of a general event (skautIS code lists); a camp has neither. */
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $skautisTypeId;
 
-    #[ORM\Column(length: 50)]
-    private string $skautisScopeId;
-
-    #[ORM\Column]
-    private bool $isCamp;
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $skautisScopeId;
 
     #[ORM\Column(type: 'date_immutable')]
     private DateTimeImmutable $dateFrom;
@@ -57,8 +59,17 @@ class Event
     #[ORM\Column(type: 'date_immutable', nullable: true)]
     private ?DateTimeImmutable $registrationDeadline;
 
+    /** Without free capacity new attendees go to the waiting list; otherwise the event refuses them. */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $waitlistEnabled = true;
+
+    /** How many days before the edit lock the lock notice goes out. */
     #[ORM\Column(type: 'smallint')]
-    private int $editLockDays;
+    private int $lockNoticeDays;
+
+    /** Retention: when the answers and notes of all registrations were deleted (spec ch. 14). */
+    #[ORM\Column(nullable: true)]
+    private ?DateTimeImmutable $answersForgottenAt = null;
 
     #[ORM\Column(nullable: true)]
     private ?int $capacity;
@@ -79,15 +90,27 @@ class Event
     #[ORM\Column(length: 20, enumType: EventState::class)]
     private EventState $state = EventState::Draft;
 
+    #[ORM\Column(length: 20, enumType: PublicRegistration::class)]
+    private PublicRegistration $publicRegistration = PublicRegistration::None;
+
     #[ORM\Column(nullable: true)]
     private ?int $skautisEventId = null;
 
     #[ORM\Column(nullable: true)]
     private ?int $skautisCampId = null;
 
+    /** When h.skauting last received this event (push, spec 9.4); later changes are pushed again. Not part of updatedAt. */
+    #[ORM\Column(nullable: true)]
+    private ?DateTimeImmutable $hskautingPushedAt = null;
+
     /** Shared secret of the mini-web link; stored in the clear because leaders need to show the link. */
     #[ORM\Column(length: 64)]
     private string $webToken;
+
+    /** The unit's Gmail account the event's e-mails leave from. */
+    #[ORM\ManyToOne(targetEntity: GoogleOAuth::class)]
+    #[ORM\JoinColumn(name: 'oauth_id', nullable: true, onDelete: 'SET NULL')]
+    private ?GoogleOAuth $mailAccount = null;
 
     #[ORM\Column]
     private int $createdByUserId;
@@ -103,6 +126,10 @@ class Event
     #[ORM\OrderBy(['position' => 'ASC', 'id' => 'ASC'])]
     private Collection $fields;
 
+    /** @var Collection<int, EventEmail> */
+    #[ORM\OneToMany(targetEntity: EventEmail::class, mappedBy: 'event', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $emails;
+
     public function __construct(int $unitId, string $slug, EventInput $input, string $webToken, int $createdByUserId, DateTimeImmutable $now)
     {
         $this->unitId = $unitId;
@@ -112,12 +139,92 @@ class Event
         $this->createdAt = $now;
         $this->updatedAt = $now;
         $this->fields = new ArrayCollection();
+        $this->emails = new ArrayCollection();
         $this->apply($input, $now);
+    }
+
+    /**
+     * @param list<EmailTemplate> $templates
+     */
+    public function seedEmails(array $templates): void
+    {
+        foreach ($templates as $template) {
+            if ($this->getEmail($template->type) === null) {
+                $this->emails->add(new EventEmail($this, $template));
+            }
+        }
+    }
+
+    public function getEmail(EmailType $type): ?EventEmail
+    {
+        foreach ($this->emails as $email) {
+            if ($email->getType() === $type) {
+                return $email;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<EventEmail>
+     */
+    public function getEmails(): array
+    {
+        $emails = $this->emails->getValues();
+        $order = array_flip(array_map(static fn (EmailType $type): string => $type->value, EmailType::eventTemplates()));
+        usort($emails, static fn (EventEmail $a, EventEmail $b): int => ($order[$a->getType()->value] ?? 99) <=> ($order[$b->getType()->value] ?? 99));
+
+        return $emails;
+    }
+
+    public function isEmailEnabled(EmailType $type): bool
+    {
+        return $this->getEmail($type->templateType())?->isEnabled() ?? false;
+    }
+
+    public function setMailAccount(?GoogleOAuth $account, DateTimeImmutable $now): void
+    {
+        $this->mailAccount = $account;
+        $this->updatedAt = $now;
+    }
+
+    public function getMailAccount(): ?GoogleOAuth
+    {
+        return $this->mailAccount;
+    }
+
+    public function getLockNoticeDays(): int
+    {
+        return $this->lockNoticeDays;
+    }
+
+    /**
+     * The day the lock notice should go out; null when the event does not send it.
+     */
+    public function getLockNoticeDate(): ?DateTimeImmutable
+    {
+        if ($this->registrationDeadline === null || ! $this->isEmailEnabled(EmailType::LockNotice) || $this->lockNoticeDays <= 0) {
+            return null;
+        }
+
+        return $this->registrationDeadline->modify(\sprintf('-%d days', $this->lockNoticeDays));
     }
 
     public function update(EventInput $input, DateTimeImmutable $now): void
     {
         $this->apply($input, $now);
+    }
+
+    public function markAnswersForgotten(DateTimeImmutable $now): void
+    {
+        $this->answersForgottenAt = $now;
+        $this->updatedAt = $now;
+    }
+
+    public function getAnswersForgottenAt(): ?DateTimeImmutable
+    {
+        return $this->answersForgottenAt;
     }
 
     /**
@@ -136,23 +243,20 @@ class Event
     /**
      * Participants may change their registration until this day (exclusive), leaders always.
      */
-    public function getEditLockDate(): DateTimeImmutable
+    /**
+     * The last day a participant may sign up, change or cancel: the deadline, or the last day of the event.
+     */
+    public function getLastChangeDay(): DateTimeImmutable
     {
-        return $this->dateFrom->modify(\sprintf('-%d days', $this->editLockDays));
+        return $this->registrationDeadline ?? $this->dateTo;
     }
 
-    public function isEditLocked(DateTimeImmutable $now): bool
-    {
-        return $now->setTime(0, 0) >= $this->getEditLockDate();
-    }
-
+    /**
+     * One limit for signing up, changing and cancelling (owner's decision 36); closing the event ends it early.
+     */
     public function isRegistrationOpen(DateTimeImmutable $now): bool
     {
-        if ($this->state !== EventState::Open) {
-            return false;
-        }
-
-        return $this->registrationDeadline === null || $now->setTime(0, 0) <= $this->registrationDeadline;
+        return $this->state === EventState::Open && $now->setTime(0, 0) <= $this->getLastChangeDay();
     }
 
     public function overlaps(self $other): bool
@@ -176,15 +280,37 @@ class Event
         $this->updatedAt = $now;
     }
 
+    public function markPushedToHskauting(DateTimeImmutable $now): void
+    {
+        $this->hskautingPushedAt = $now;
+    }
+
+    public function getHskautingPushedAt(): ?DateTimeImmutable
+    {
+        return $this->hskautingPushedAt;
+    }
+
     public function linkSkautisEvent(int $skautisEventId, DateTimeImmutable $now): void
     {
         $this->skautisEventId = $skautisEventId;
         $this->updatedAt = $now;
     }
 
-    public function linkSkautisCamp(?int $skautisCampId, DateTimeImmutable $now): void
+    /**
+     * Camps exist in skautIS only; name, dates and place are mirrored from there and never edited here.
+     */
+    public function linkSkautisCamp(Camp $camp, DateTimeImmutable $now): void
     {
-        $this->skautisCampId = $skautisCampId;
+        $this->skautisCampId = $camp->id;
+        $this->updateFromCamp($camp, $now);
+    }
+
+    public function updateFromCamp(Camp $camp, DateTimeImmutable $now): void
+    {
+        $this->name = $camp->name;
+        $this->dateFrom = $camp->dateFrom;
+        $this->dateTo = $camp->dateTo;
+        $this->place = $camp->location === '' ? null : $camp->location;
         $this->updatedAt = $now;
     }
 
@@ -212,19 +338,40 @@ class Event
         return $this->slug;
     }
 
-    public function getSkautisTypeId(): string
+    public function getSkautisTypeId(): ?string
     {
         return $this->skautisTypeId;
     }
 
-    public function getSkautisScopeId(): string
+    public function getSkautisScopeId(): ?string
     {
         return $this->skautisScopeId;
     }
 
     public function isCamp(): bool
     {
-        return $this->isCamp;
+        return $this->skautisCampId !== null;
+    }
+
+    public function getPublicRegistration(): PublicRegistration
+    {
+        return $this->publicRegistration;
+    }
+
+    /**
+     * Whether someone with the public link may register right now (state, deadline and mode).
+     */
+    public function isPublicRegistrationOpen(DateTimeImmutable $now): bool
+    {
+        return $this->publicRegistration === PublicRegistration::Open && $this->isRegistrationOpen($now);
+    }
+
+    /**
+     * Whether someone may sign up after logging into skautIS (4.6): in both public modes, as long as registration runs.
+     */
+    public function acceptsSkautisLogin(DateTimeImmutable $now): bool
+    {
+        return $this->publicRegistration->isEnabled() && $this->isRegistrationOpen($now);
     }
 
     public function getDateFrom(): DateTimeImmutable
@@ -252,9 +399,9 @@ class Event
         return $this->registrationDeadline;
     }
 
-    public function getEditLockDays(): int
+    public function isWaitlistEnabled(): bool
     {
-        return $this->editLockDays;
+        return $this->waitlistEnabled;
     }
 
     public function getCapacity(): ?int
@@ -335,16 +482,19 @@ class Event
 
     private function apply(EventInput $input, DateTimeImmutable $now): void
     {
-        $this->name = $input->name;
         $this->skautisTypeId = $input->skautisTypeId;
         $this->skautisScopeId = $input->skautisScopeId;
-        $this->isCamp = $input->isCamp;
-        $this->dateFrom = $input->dateFrom;
-        $this->dateTo = $input->dateTo;
-        $this->place = $input->place;
+        if (! $this->isCamp()) {
+            $this->name = $input->name;
+            $this->dateFrom = $input->dateFrom;
+            $this->dateTo = $input->dateTo;
+            $this->place = $input->place;
+        }
+        $this->publicRegistration = $input->publicRegistration;
         $this->description = $input->description;
         $this->registrationDeadline = $input->registrationDeadline;
-        $this->editLockDays = $input->editLockDays;
+        $this->waitlistEnabled = $input->waitlistEnabled;
+        $this->lockNoticeDays = $input->lockNoticeDays;
         $this->capacity = $input->capacity;
         $this->price = $input->price;
         $this->contactName = $input->contactName;

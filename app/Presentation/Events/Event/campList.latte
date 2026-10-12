@@ -1,0 +1,25 @@
+{block title}Nový tábor{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1"><a n:href=":Events:Overview:default" class="link-secondary">Akce</a></div>
+<h1 class="h3 mb-3">Nový tábor ze skautISu</h1>
+<p class="text-body-secondary">Tábor se zakládá ve skautISu; tady ho jen vyberete a doplníte, co potřebuje Zvadlo (uzávěrku, kapacitu, kontakt, vlastní pole).</p>
+
+<div n:if="$camps === []" class="alert alert-light border" data-test="no-camps">Ve skautISu není žádný tábor jednotek, které spravujete, pro letošní ani příští rok.</div>
+
+<div class="list-group" data-test="camp-list">
+    <div n:foreach="$camps as $camp" class="list-group-item d-flex flex-column flex-md-row justify-content-between gap-2" data-test="camp-item">
+        <div>
+            <div class="fw-semibold">{$camp->name}</div>
+            <div class="small text-body-secondary">{$camp->dateFrom|date:'d.m.Y'} – {$camp->dateTo|date:'d.m.Y'}{if $camp->location !== ''} · {$camp->location}{/if} · {$camp->unitName} · {$camp->stateName}</div>
+        </div>
+        <div>
+            {if $linked[$camp->id] !== null}
+                <a n:href="default $linked[$camp->id]->getId()" class="btn btn-sm btn-outline-secondary">Už ve Zvadle</a>
+            {else}
+                <a n:href="createCamp tabor => $camp->id" class="btn btn-sm btn-primary" data-test="camp-create">Založit</a>
+            {/if}
+        </div>
+    </div>
+</div>
+{/block}

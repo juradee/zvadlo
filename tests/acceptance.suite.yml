@@ -1,6 +1,7 @@
 actor: AcceptanceTester
 modules:
     enabled:
+        - Asserts
         - WebDriver:
               url: '%APP_BASE_URL%'
               host: selenium
@@ -13,7 +14,9 @@ modules:
                           - '--disable-gpu'
                           - '--no-sandbox'
                           - '--lang=cs'
+                          - '--unsafely-treat-insecure-origin-as-secure=http://moje-hospodareni.cz'
         - App\Tests\Support\Helper\Acceptance
+        - App\Tests\Support\Helper\NetteContainer
         - Db:
               dsn: 'mysql:host=%DB_HOST%;dbname=%DB_NAME%;charset=utf8mb4'
               user: '%DB_USER%'
@@ -30,6 +33,7 @@ env:
                                 - '--disable-gpu'
                                 - '--no-sandbox'
                                 - '--lang=cs'
+                                - '--unsafely-treat-insecure-origin-as-secure=http://moje-hospodareni.cz'
     mobile:
         modules:
             config:
@@ -42,3 +46,4 @@ env:
                                 - '--disable-gpu'
                                 - '--no-sandbox'
                                 - '--lang=cs'
+                                - '--unsafely-treat-insecure-origin-as-secure=http://moje-hospodareni.cz'

@@ -36,6 +36,9 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Dependency audit
+        run: composer audit --no-interaction
+
       - name: Build images
         run: make build
 
@@ -47,9 +50,6 @@ jobs:
 
       - name: Latte lint
         run: make check-latte
-
-      - name: Package tests
-        run: make test-packages
 
       - name: Unit tests
         run: make test-unit
@@ -88,7 +88,7 @@ jobs:
           cache: npm
 
       - name: Build assets
-        run: npm ci && npm run build
+        run: npm ci && npm run check-types && npm run build
 
       - name: Build images
         run: make build
@@ -107,3 +107,153 @@ jobs:
       - name: Clean up
         if: always()
         run: make down
+
+  # ── Release build (only for branches that deploy) ─────────────────────────
+  build:
+    name: Build release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: soap, intl, pdo_mysql, zip
+          coverage: none
+
+      - name: Install production dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --no-progress --classmap-authoritative
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Build assets
+        run: npm ci && npm run build
+
+      - name: Pack release
+        run: |
+          tar --exclude-vcs --exclude='./node_modules' --exclude='./tests' --exclude='./docker' --exclude='./.docs' --exclude='./.agents' \
+              --exclude='./log' --exclude='./temp' --exclude='./uploads' --exclude='./frontend' \
+              -czf /tmp/release.tar.gz -C . .
+          mv /tmp/release.tar.gz release.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  # ── Deploys: GitHub environments hold the variables and secrets ───────────
+  # Beta and test servers deploy only when the repository variable DEPLOY_BETA or DEPLOY_TEST is 'true'
+  # (bin/github-setup.sh sets it); production deploys after deploy-test, or straight after the build
+  # while deploy-test is switched off.
+  deploy-beta:
+    name: Deploy beta
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/beta/') && vars.DEPLOY_BETA == 'true'
+    needs: [checks, acceptance, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: beta
+      url: ${{ vars.APP_BASE_URL }}
+    concurrency:
+      group: deploy-beta
+      cancel-in-progress: false
+    steps: &deploy-steps
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+
+      - name: Unpack release
+        run: tar -xzf release.tar.gz && rm release.tar.gz
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Install Deployer
+        run: |
+          curl -fsSL https://github.com/deployphp/deployer/releases/download/v7.5.12/deployer.phar -o /usr/local/bin/dep
+          chmod +x /usr/local/bin/dep
+
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Trust the server
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ vars.DEPLOY_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: dep deploy ${{ env.DEPLOY_TARGET }} -f deploy.php --no-interaction -v
+        env:
+          DEPLOY_TARGET: ${{ github.job }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          DEPLOY_PHP_BIN: ${{ vars.DEPLOY_PHP_BIN }}
+          DEPLOY_WEB_ROOT: ${{ vars.DEPLOY_WEB_ROOT }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          APPLICATION_ID: ${{ vars.APPLICATION_ID }}
+          SKAUTIS_TEST_MODE: ${{ vars.SKAUTIS_TEST_MODE }}
+          DB_HOST: ${{ vars.DB_HOST }}
+          DB_NAME: ${{ vars.DB_NAME }}
+          DB_USER: ${{ vars.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SEND_EMAIL: ${{ vars.SEND_EMAIL }}
+          SYSTEM_EMAIL: ${{ vars.SYSTEM_EMAIL }}
+          ERROR_EMAILS: ${{ vars.ERROR_EMAILS }}
+          TEST_BACKGROUND: ${{ vars.TEST_BACKGROUND }}
+          ENVIRONMENT_LABEL: ${{ vars.ENVIRONMENT_LABEL }}
+          ENVIRONMENT_COLOR: ${{ vars.ENVIRONMENT_COLOR }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_REDIRECT_URI: ${{ vars.GOOGLE_REDIRECT_URI }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          GITHUB_ISSUES_TOKEN: ${{ secrets.GH_ISSUES_TOKEN }}
+          HSKAUTING_WEBHOOK_URL: ${{ vars.HSKAUTING_WEBHOOK_URL }}
+          HSKAUTING_WEBHOOK_SECRET: ${{ secrets.HSKAUTING_WEBHOOK_SECRET }}
+          ADMIN_USER_IDS: ${{ vars.ADMIN_USER_IDS }}
+          RETENTION_MONTHS_SYNCED: ${{ vars.RETENTION_MONTHS_SYNCED }}
+          RETENTION_MONTHS_UNSYNCED: ${{ vars.RETENTION_MONTHS_UNSYNCED }}
+          MAINTENANCE_MODE: ${{ vars.MAINTENANCE_MODE }}
+          MAINTENANCE_ALLOWED_IPS: ${{ vars.MAINTENANCE_ALLOWED_IPS }}
+          MAINTENANCE_STARTED_AT: ${{ vars.MAINTENANCE_STARTED_AT }}
+          MAINTENANCE_ENDS_AT: ${{ vars.MAINTENANCE_ENDS_AT }}
+          GITHUB_SHA: ${{ github.sha }}
+
+  deploy-test:
+    name: Deploy test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.DEPLOY_TEST == 'true'
+    needs: [checks, acceptance, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: test
+      url: ${{ vars.APP_BASE_URL }}
+    concurrency:
+      group: deploy-test
+      cancel-in-progress: false
+    steps: *deploy-steps
+
+  deploy-production:
+    name: Deploy production
+    if: >-
+      !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      && needs.checks.result == 'success' && needs.acceptance.result == 'success' && needs.build.result == 'success'
+      && (needs.deploy-test.result == 'success' || needs.deploy-test.result == 'skipped')
+    needs: [checks, acceptance, build, deploy-test]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.APP_BASE_URL }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps: *deploy-steps

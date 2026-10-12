@@ -10,6 +10,7 @@ use App\Model\Event\EventFieldInput;
 use App\Model\Event\EventFieldType;
 use App\Model\Event\EventRepository;
 use App\Model\Event\EventService;
+use App\Model\Registration\FieldInUseException;
 use App\Presentation\Accessory\Form\FormFactory;
 use App\Presentation\SecuredPresenter;
 use LogicException;
@@ -64,6 +65,7 @@ final class FieldPresenter extends SecuredPresenter
         }
 
         $form = $this->forms->create();
+        $form->addGroup();
         $typeSelect = $form->addSelect('type', 'Typ pole', $types)->setRequired();
         if ($edited !== null) {
             $typeSelect->setDisabled()->setDefaultValue($edited->getType()->value);
@@ -74,10 +76,15 @@ final class FieldPresenter extends SecuredPresenter
         $form->addText('help', 'Nápověda')
             ->setNullable()
             ->addRule($form::MaxLength, 'Nápověda může mít nejvýše %d znaků.', 500);
-        $form->addCheckbox('required', 'Povinné pole');
+        $form->addCheckbox('required', 'Povinné pole')
+            ->setOption('description', 'Účastník musí odpovědět; u pole ano / ne musí být zaškrtnuté (potvrzení).');
+        // The options box shows only for the two choice types.
+        $typeSelect->addCondition($form::IsIn, [EventFieldType::Choice->value, EventFieldType::MultiChoice->value])->toggle('options-box');
+        $form->addGroup()->setOption('id', 'options-box');
         $options = $form->addTextArea('options', 'Možnosti', null, 4)
             ->setNullable()
-            ->setOption('description', 'Jen pro výběr: každá možnost na samostatný řádek.');
+            ->setOption('description', 'Každá možnost na samostatný řádek.');
+        $form->setCurrentGroup(null);
         $form->addSubmit('save', $edited === null ? 'Přidat pole' : 'Uložit pole');
 
         if ($edited !== null) {
@@ -106,12 +113,16 @@ final class FieldPresenter extends SecuredPresenter
                 options: self::parseOptions($values['options']),
             );
 
-            if ($edited === null) {
-                $this->service->addField($this->requireEvent(), $input);
-                $this->flashMessage('Pole bylo přidáno.', 'success');
-            } else {
-                $this->service->updateField($edited, $input);
-                $this->flashMessage('Pole bylo uloženo.', 'success');
+            try {
+                if ($edited === null) {
+                    $this->service->addField($this->requireEvent(), $input);
+                    $this->flashMessage('Pole bylo přidáno.', 'success');
+                } else {
+                    $this->service->updateField($edited, $input);
+                    $this->flashMessage('Pole bylo uloženo.', 'success');
+                }
+            } catch (FieldInUseException $exception) {
+                $this->flashMessage($exception->getMessage(), 'danger');
             }
 
             $this->redirect('default', ['id' => $this->requireEvent()->getId()]);
@@ -139,13 +150,17 @@ final class FieldPresenter extends SecuredPresenter
             $form->onSuccess[] = function (Form $form) use ($field): void {
                 $button = $form->isSubmitted();
                 $action = $button instanceof SubmitButton ? (string) $button->getName() : '';
-                match ($action) {
-                    'up' => $this->service->moveField($field, -1),
-                    'down' => $this->service->moveField($field, 1),
-                    'toggle' => $this->service->setFieldHidden($field, ! $field->isHidden()),
-                    'remove' => $this->service->removeField($field),
-                    default => null,
-                };
+                try {
+                    match ($action) {
+                        'up' => $this->service->moveField($field, -1),
+                        'down' => $this->service->moveField($field, 1),
+                        'toggle' => $this->service->setFieldHidden($field, ! $field->isHidden()),
+                        'remove' => $this->service->removeField($field),
+                        default => null,
+                    };
+                } catch (FieldInUseException $exception) {
+                    $this->flashMessage($exception->getMessage(), 'danger');
+                }
                 $this->redirect('default', ['id' => $this->requireEvent()->getId()]);
             };
 

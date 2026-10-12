@@ -19,8 +19,10 @@ parameters:
     skautisConfig: %envConfig.skautis%
     google: %envConfig.google%
     github: %envConfig.github%
-    apiTokens: %envConfig.apiTokens%
+    hskauting: %envConfig.hskauting%
     retentionMonths: %envConfig.retentionMonths%
+    adminUserIds: %envConfig.adminUserIds%
+    maintenance: %envConfig.maintenance%
     uploadDir: %projectDir%/uploads
 
 php:
@@ -34,6 +36,8 @@ session:
 
 http:
     frames: DENY
+    headers:
+        Referrer-Policy: same-origin
 
 application:
     errorPresenter:
@@ -52,9 +56,23 @@ tracy:
     strictMode: true
     showBar: %tracyShowBar%
 
+mail:
+    smtp: true
+    host: %mailSmtp.host%
+    port: %mailSmtp.port%
+
 extensions:
     console: Contributte\Console\DI\ConsoleExtension(%consoleMode%)
-    skautis: Webwings\SkautisNette\DI\SkautisExtension
+    scheduler: Contributte\Scheduler\DI\SchedulerExtension
+    skautis: Skaut\SkautisNette\SkautisExtension
+
+scheduler:
+    jobs:
+        - {cron: '* * * * *', callback: [@App\Model\Task\TaskRunner, run]}
+        - {cron: '* * * * *', callback: [@App\Model\Hskauting\HskautingNotifier, runScheduled]}
+        - {cron: '0 7 * * *', callback: [@App\Model\Mailing\LockNoticeScheduler, run]}
+        - {cron: '0 4 * * *', callback: [@App\Model\Registration\RetentionService, runScheduled]}
+        - {cron: '30 3 * * *', callback: [@App\Model\Monitoring\LogRotation, runScheduled]}
 
 console:
     url: %appBaseUrl%

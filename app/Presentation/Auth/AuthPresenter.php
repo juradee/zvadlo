@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Auth;
 
+use App\Model\Registration\SkautisParticipantLogin;
 use App\Model\Skautis\SkautisGateway;
 use App\Model\User\LoginFailedException;
 use App\Model\User\LoginService;
@@ -18,6 +19,7 @@ final class AuthPresenter extends BasePresenter
     public function __construct(
         private readonly SkautisGateway $gateway,
         private readonly LoginService $loginService,
+        private readonly SkautisParticipantLogin $participantLogin,
     ) {
         parent::__construct();
     }
@@ -32,6 +34,18 @@ final class AuthPresenter extends BasePresenter
         $request = $this->getHttpRequest();
         if (! $request->isMethod('POST')) {
             $this->redirect(':Home:default');
+        }
+
+        // A participant coming from a public event page (4.6): no leader identity, back to the event.
+        $target = SkautisParticipantLogin::parseBacklink($ReturnUrl);
+        if ($target !== null) {
+            try {
+                $this->participantLogin->loginFromSkautis($request->getPost());
+            } catch (LoginFailedException) {
+                $this->flashMessage('Přihlášení přes skautIS se nezdařilo. Zkuste to prosím znovu.', 'danger');
+                $this->redirect(':Web:Public:default', $target);
+            }
+            $this->redirect(':Web:Public:skautis', $target);
         }
 
         try {

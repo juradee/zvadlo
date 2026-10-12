@@ -1,0 +1,81 @@
+{block title}skautIS – {$event->getName()}{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1">
+    <a n:href=":Events:Overview:default" class="link-secondary">Akce</a> · <a n:href=":Events:Event:default $event->getId()" class="link-secondary">{$event->getName()}</a>
+</div>
+<h1 class="h3 mb-3">Propsání do skautISu</h1>
+
+<div class="card mb-3" data-test="skautis-link">
+    <div class="card-body">
+        {if $event->isCamp()}
+            <p class="mb-1">Tábor ve skautISu: ID {$event->getSkautisCampId()} <a href="{$skautisUrl}" target="_blank" rel="noopener">otevřít ve skautISu</a></p>
+            <p class="small text-body-secondary mb-0">Tábor vznikl ve skautISu; Zvadlo do něj jen propisuje účastníky, jakmile je odevzdaný ke schválení.</p>
+        {elseif $linked}
+            <p class="mb-0">Akce ve skautISu: ID {$event->getSkautisEventId()} <a href="{$skautisUrl}" target="_blank" rel="noopener" data-test="skautis-event-link">otevřít ve skautISu</a></p>
+        {elseif $canCreate}
+            <p>Akce ve skautISu zatím neexistuje. Založí se s názvem, termínem, místem, typem a rozsahem z této akce; účastníky do ní potom propíšete níže.</p>
+            {control createForm}
+        {else}
+            <p class="mb-0 text-warning-emphasis" data-test="no-permission">Akce ve skautISu zatím neexistuje a vaše role ve skautISu nesmí akce zakládat. Přepněte roli, nebo akci založte ve skautISu ručně.</p>
+        {/if}
+    </div>
+</div>
+
+<div n:if="$skautisError !== null" class="alert alert-danger" data-test="skautis-error">skautIS neodpověděl: {$skautisError}</div>
+<div n:if="$blocker !== null" class="alert alert-warning" data-test="sync-blocker">{$blocker}</div>
+
+<div n:if="$diff !== null" class="row g-3" data-test="sync-diff">
+    <div class="col-12 col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Chybí ve skautISu <span class="badge text-bg-warning" data-test="count-missing">{count($diff->missing)}</span></span>
+                <button n:if="$canWrite && $blocker === null && $diff->missing !== []" type="button" class="btn btn-sm btn-primary" data-batch-start="{link syncBatch!}" data-batch-total="{count($diff->missing)}" data-test="sync-start">Propsat účastníky</button>
+            </div>
+            <div class="alert alert-info m-3 d-none" data-batch-panel>
+                <span data-progress-label>Propisuji do skautISu…</span>
+                <div class="progress mt-2" style="height: 6px"><div class="progress-bar progress-bar-striped progress-bar-animated" data-progress-bar style="width: 0%"></div></div>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li n:foreach="$diff->missing as $registration" class="list-group-item d-flex justify-content-between gap-2">
+                    <span><a n:href=":Events:Registration:detail $event->getId(), $registration->getId()">{$registration->getDisplayName()}</a> <span n:if="! $registration->isMember()" class="badge text-bg-light border">nečlen, založí se osoba</span></span>
+                    <span n:if="$registration->getSkautisError() !== null" class="text-danger small" data-test="sync-error">{$registration->getSkautisError()}</span>
+                </li>
+                <li n:if="$diff->missing === []" class="list-group-item text-body-secondary">Všichni přihlášení jsou ve skautISu.</li>
+            </ul>
+            <div n:if="$canWrite === false && $linked" class="card-footer small text-warning-emphasis" data-test="no-write-permission">Vaše role ve skautISu nesmí do této akce přidávat účastníky.</div>
+        </div>
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Už nejedou, ale ve skautISu jsou <span class="badge text-bg-secondary" data-test="count-remove">{count($diff->toRemove)}</span></span>
+                <button n:if="$canDelete && $diff->toRemove !== []" type="button" class="btn btn-sm btn-outline-danger" data-batch-start="{link removeBatch!}" data-batch-total="{count($diff->toRemove)}" data-test="remove-start">Odebrat ze skautISu</button>
+            </div>
+            <div class="alert alert-info m-3 d-none" data-batch-panel>
+                <span data-progress-label>Odebírám ze skautISu…</span>
+                <div class="progress mt-2" style="height: 6px"><div class="progress-bar progress-bar-striped progress-bar-animated" data-progress-bar style="width: 0%"></div></div>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li n:foreach="$diff->toRemove as $registration" class="list-group-item">{$registration->getDisplayName()} <span class="badge {$registration->getState()->badgeClass()}">{$registration->getState()->label()}</span></li>
+                <li n:if="$diff->toRemove === []" class="list-group-item text-body-secondary">Nikdo.</li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header">Propsaní <span class="badge text-bg-success" data-test="count-synced">{count($diff->synced)}</span></div>
+            <ul class="list-group list-group-flush">
+                <li n:foreach="$diff->synced as $registration" class="list-group-item">{$registration->getDisplayName()} <span class="small text-body-secondary">účastník {$registration->getSkautisParticipantId()}</span></li>
+                <li n:if="$diff->synced === []" class="list-group-item text-body-secondary">Zatím nikdo.</li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-header">Jen ve skautISu <span class="badge text-bg-light border" data-test="count-foreign">{count($diff->foreign)}</span></div>
+            <ul class="list-group list-group-flush">
+                <li n:foreach="$diff->foreign as $participant" class="list-group-item">{$participant->name} <span class="small text-body-secondary">{$participant->unitName}</span></li>
+                <li n:if="$diff->foreign === []" class="list-group-item text-body-secondary">Nikdo; ve skautISu nejsou účastníci, které by Zvadlo neznalo.</li>
+            </ul>
+            <div class="card-footer small text-body-secondary">Účastníky přidané ve skautISu ručně Zvadlo nemaže.</div>
+        </div>
+    </div>
+</div>
+{/block}

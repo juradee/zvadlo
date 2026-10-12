@@ -1,0 +1,13 @@
+{block title}Jste offline{/block}
+
+{block content}
+<h1 class="h3 mb-1">Jste offline</h1>
+<p class="text-body-secondary">Zvadlo potřebuje připojení k internetu. Bez něj nelze nic měnit ani odesílat, k dispozici jsou jen uložené kopie naposledy zobrazených seznamů přihlášených.</p>
+
+<div class="card" data-test="offline-page">
+    <div class="card-header">Uložené seznamy přihlášených</div>
+    <ul class="list-group list-group-flush" data-offline-list data-test="offline-cached-pages"></ul>
+    <div class="card-body text-body-secondary small" data-offline-empty hidden data-test="offline-empty">Žádný seznam zatím uložený není. Seznam se uloží při každém jeho zobrazení v přihlášené aplikaci.</div>
+</div>
+<p class="mt-3"><a href="{link :Dashboard:default}" class="btn btn-outline-primary">Zkusit znovu</a></p>
+{/block}

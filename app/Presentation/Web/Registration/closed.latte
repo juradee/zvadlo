@@ -1,0 +1,13 @@
+{block title}Přihlašování skončilo – {$event->getName()}{/block}
+
+{block content}
+{include '@event-header.latte'}
+<div class="alert alert-warning" data-test="closed">
+    {if $event->getState() === App\Model\Event\EventState::Open}
+        Přihlašování na tuto akci už skončilo{if $event->getRegistrationDeadline() !== null} (uzávěrka byla {$event->getRegistrationDeadline()|date:'d.m.Y'}){/if}.
+    {else}
+        Přihlašování na tuto akci teď není otevřené.
+    {/if}
+</div>
+<p class="text-body-secondary">Ozvěte se vedoucímu: {$event->getContactName()}, <a href="mailto:{$event->getContactEmail()}">{$event->getContactEmail()}</a>{if $event->getContactPhone() !== null}, {$event->getContactPhone()}{/if}.</p>
+{/block}

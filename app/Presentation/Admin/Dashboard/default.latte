@@ -1,0 +1,19 @@
+{block title}Administrace{/block}
+
+{block content}
+<h1 class="h3 mb-3">Administrace</h1>
+<div class="row g-3" data-test="admin-page">
+    <div class="col-12 col-md-6 col-lg-3">
+        <a n:href=":Admin:BugReports:default" class="card h-100 text-decoration-none" data-test="admin-link-bug-reports"><div class="card-body"><h2 class="h5">Hlášení chyb</h2><p class="small text-body-secondary mb-0">Technická hlášení uživatelů s diagnostikou, odpovědi, GitHub issue, vyřízení.</p></div></a>
+    </div>
+    <div n:if="$isAdmin" class="col-12 col-md-6 col-lg-3">
+        <a n:href=":Admin:Users:default" class="card h-100 text-decoration-none" data-test="admin-link-users"><div class="card-body"><h2 class="h5">Uživatelé</h2><p class="small text-body-secondary mb-0">Systémové role admin a support podle skautIS ID uživatele.</p></div></a>
+    </div>
+    <div n:if="$isAdmin" class="col-12 col-md-6 col-lg-3">
+        <a n:href=":Admin:Statistics:default" class="card h-100 text-decoration-none" data-test="admin-link-statistics"><div class="card-body"><h2 class="h5">Statistiky</h2><p class="small text-body-secondary mb-0">Jednotky, akce, přihlášky a e-maily po měsících.</p></div></a>
+    </div>
+    <div n:if="$isAdmin" class="col-12 col-md-6 col-lg-3">
+        <a n:href=":Admin:Units:default" class="card h-100 text-decoration-none" data-test="admin-link-units"><div class="card-body"><h2 class="h5">Jednotky</h2><p class="small text-body-secondary mb-0">Kdo systém používá, odesílací účty a poslední aktivita.</p></div></a>
+    </div>
+</div>
+{/block}

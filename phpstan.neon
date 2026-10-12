@@ -3,7 +3,6 @@ parameters:
     paths:
         - app
         - bin
-        - packages/skautis-nette/src
         - tests
     excludePaths:
         - tests/_output (?)

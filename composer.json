@@ -5,15 +5,13 @@
     "license": "AGPL-3.0-or-later",
     "repositories": [
         {
-            "type": "path",
-            "url": "packages/skautis-nette",
-            "options": {
-                "symlink": true
-            }
+            "type": "vcs",
+            "url": "https://github.com/skaut/Skautis.git",
+            "no-api": true
         },
         {
             "type": "vcs",
-            "url": "https://github.com/webwingscz/Skautis.git",
+            "url": "https://github.com/skaut/SkautisNette.git",
             "no-api": true
         }
     ],
@@ -25,7 +23,10 @@
         "ext-soap": "*",
         "contributte/console": "^0.10",
         "contributte/scheduler": "^0.8",
+        "google/apiclient": "^2.18",
+        "guzzlehttp/guzzle": "^8.2",
         "latte/latte": "^3.1",
+        "league/commonmark": "^2.7",
         "monolog/monolog": "^3.9",
         "nette/application": "^3.3",
         "nette/bootstrap": "^3.2",
@@ -41,9 +42,10 @@
         "nettrine/fixtures": "^0.8",
         "nettrine/migrations": "^0.10",
         "nettrine/orm": "^0.10",
+        "sentry/sentry": "^4.20",
         "skaut/skautis": "^3.1",
-        "tracy/tracy": "^2.10",
-        "webwingscz/skautis-nette": "@dev"
+        "skaut/skautis-nette": "^3.1",
+        "tracy/tracy": "^2.10"
     },
     "require-dev": {
         "codeception/codeception": "^5.3",
@@ -81,5 +83,16 @@
         "allow-plugins": {
             "phpstan/extension-installer": true
         }
+    },
+    "extra": {
+        "google/apiclient-services": [
+            "Gmail",
+            "Oauth2"
+        ]
+    },
+    "scripts": {
+        "pre-autoload-dump": [
+            "Google\\Task\\Composer::cleanup"
+        ]
     }
 }

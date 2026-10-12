@@ -12,6 +12,7 @@ final class FormFactory
     {
         $form = new Form();
         $form->setRenderer(new BootstrapFormRenderer());
+        $form->onRender[] = BootstrapFormRenderer::decorate(...);
 
         return $form;
     }

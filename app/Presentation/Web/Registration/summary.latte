@@ -1,0 +1,31 @@
+{block title}Přihláška – {$event->getName()}{/block}
+
+{block content}
+{include '@event-header.latte'}
+<div class="card mb-3">
+    <div class="card-body">
+        <p class="mb-2">
+            Účastník: <strong data-test="participant-name">{$registration->getDisplayName()}</strong>
+            <span class="badge {$registration->getState()->badgeClass()}" data-test="registration-state">{$registration->getState()->label()}</span>
+        </p>
+        <p n:if="$registration->getState() === App\Model\Registration\RegistrationState::Waitlisted" class="alert alert-warning mb-2">Kapacita akce je naplněná, účastník je náhradník na čekací listině. Když se uvolní místo, dáme vám vědět e-mailem.</p>
+        <p n:if="$registration->getState() === App\Model\Registration\RegistrationState::Declined" class="mb-2 text-body-secondary">Účast je odmítnuta{if $registration->getDeclineReason() !== null}: {$registration->getDeclineReason()}{/if}.</p>
+
+        <dl n:if="$registration->getState()->isAttending()" class="row mb-0" data-test="summary">
+            <dt class="col-5 col-sm-4">{$registration->asksForContactEmail() ? 'Kontaktní e-mail' : 'E-maily k akci'}</dt><dd class="col-7 col-sm-8">{implode(', ', $registration->getMailAddresses()) ?: '–'}</dd>
+            <dt class="col-5 col-sm-4">Telefon</dt><dd class="col-7 col-sm-8">{$registration->getPhone() ?? '–'}</dd>
+            <dt n:if="$registration->getNote() !== null" class="col-5 col-sm-4">Poznámka</dt><dd n:if="$registration->getNote() !== null" class="col-7 col-sm-8">{$registration->getNote()}</dd>
+            {foreach $fields as $field}
+                <dt class="col-5 col-sm-4">{$field->getLabel()}</dt><dd class="col-7 col-sm-8">{$registration->getFieldValueText($field) ?: '–'}</dd>
+            {/foreach}
+        </dl>
+    </div>
+    <div class="card-footer d-flex flex-wrap gap-2">
+        <a n:if="$canChange" n:href="default" class="btn btn-outline-primary" data-test="edit-link">{$registration->getState()->isAttending() ? 'Upravit přihlášku' : 'Změnit odpověď'}</a>
+        <a n:if="$canCancel" n:href="cancel" class="btn btn-outline-danger" data-test="cancel-link">Zrušit účast</a>
+        <span n:if="! $canChange" class="text-body-secondary small align-self-center" data-test="locked-notice">Přihlášku už nelze měnit; změny domluvte s vedoucím.</span>
+    </div>
+</div>
+
+<p class="text-body-secondary small">Kontakt na vedoucího: {$event->getContactName()}, <a href="mailto:{$event->getContactEmail()}">{$event->getContactEmail()}</a>{if $event->getContactPhone() !== null}, {$event->getContactPhone()}{/if}.</p>
+{/block}

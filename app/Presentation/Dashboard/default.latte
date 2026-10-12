@@ -10,12 +10,22 @@
             <span data-test="dashboard-role">{$role->displayName}</span>
         </p>
     </div>
-    <form n:name="roleForm" class="d-flex gap-2 align-items-end" data-allow-resubmit>
-        <div>
-            <label n:name="role" class="form-label small mb-1"></label>
-            <select n:name="role" class="form-select" data-test="role-select"></select>
+    <form n:name="roleForm" data-allow-resubmit data-test="role-form">
+        <div class="d-flex gap-2 align-items-end">
+            <div>
+                <label n:name="role" class="form-label small mb-1">{$form['role']->getCaption()}</label>
+                <select n:name="role" class="form-select" data-test="role-select"></select>
+            </div>
+            <button n:name="switch" class="btn btn-outline-primary" data-test="role-switch">Přepnout roli</button>
         </div>
-        <button n:name="switch" class="btn btn-outline-primary" data-test="role-switch"></button>
+        <div class="form-check form-check-inline mt-2 small">
+            <input n:name="remember" class="form-check-input" data-test="remember-role">
+            <label n:name="remember" class="form-check-label">{$form['remember']->getCaption()}</label>
+        </div>
+        <div class="form-check form-check-inline mt-2 small">
+            <input n:name="extend" class="form-check-input" data-test="extend-login">
+            <label n:name="extend" class="form-check-label">{$form['extend']->getCaption()}</label>
+        </div>
     </form>
 </div>
 
@@ -27,7 +37,7 @@
     <ul class="list-group list-group-flush" data-test="upcoming-events">
         <li n:foreach="$upcoming as $event" class="list-group-item d-flex justify-content-between align-items-center">
             <a n:href=":Events:Event:default $event->getId()">{$event->getName()}</a>
-            <span class="small text-body-secondary">{$event->getDateFrom()|date:'j. n. Y'} <span class="badge {$event->getState()->badgeClass()}">{$event->getState()->label()}</span></span>
+            <span class="small text-body-secondary">{$event->getDateFrom()|date:'d.m.Y'} <span class="badge {$event->getState()->badgeClass()}">{$event->getState()->label()}</span></span>
         </li>
         <li n:if="$upcoming === []" class="list-group-item text-body-secondary">Žádná nadcházející akce. <a n:if="$editUnits !== []" n:href=":Events:Event:create">Založit akci</a></li>
     </ul>

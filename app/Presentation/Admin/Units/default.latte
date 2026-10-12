@@ -1,0 +1,22 @@
+{block title}Jednotky – administrace{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1"><a n:href=":Admin:Dashboard:default" class="link-secondary">Administrace</a></div>
+<h1 class="h3 mb-3">Jednotky používající Zvadlo</h1>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-sm mb-0" data-test="admin-units">
+            <thead><tr><th>skautIS ID jednotky</th><th class="text-end">Akcí</th><th>Odesílací účty</th><th>Poslední aktivita</th></tr></thead>
+            <tbody>
+                <tr n:foreach="$units as $unit">
+                    <td><code>{$unit['unitId']}</code></td>
+                    <td class="text-end">{$unit['events']}</td>
+                    <td class="small">{$unit['accounts'] === [] ? '–' : implode(', ', $unit['accounts'])}</td>
+                    <td class="small">{if $unit['lastActivity'] !== null}{$unit['lastActivity']|date:'d.m.Y H:i'}{else}–{/if}</td>
+                </tr>
+                <tr n:if="$units === []"><td colspan="4" class="text-body-secondary">Zatím žádná akce.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{/block}

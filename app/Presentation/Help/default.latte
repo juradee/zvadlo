@@ -1,0 +1,48 @@
+{block title}Nápověda{/block}
+
+{block content}
+<h1 class="h3 mb-1">Nápověda pro vedoucí</h1>
+<p class="text-body-secondary">Zvadlo je jednoduché jako formulář: založíte akci, pozvete lidi a oni přes osobní odkaz odpoví. Nic dalšího po rodičích nechceme.</p>
+
+<div class="row g-3" data-test="help-page">
+    <div class="col-12 col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header">Jak na to v šesti krocích</div>
+            <ol class="list-group list-group-flush list-group-numbered">
+                <li class="list-group-item"><strong>Založte akci</strong> v menu <a n:href=":Events:Overview:default">Akce</a>. Tábor se zakládá jen ze seznamu táborů ve skautISu, ostatní akce ručně. Vyberte Gmail účet jednotky, ze kterého mají odcházet e-maily (propojíte ho v menu <a n:href=":Unit:Settings:default">Jednotka</a>).</li>
+                <li class="list-group-item"><strong>Upravte otázky a e-maily.</strong> Vlastní pole (text, ano/ne, výběr jedné nebo více možností, povinná i nepovinná) přidáte tlačítkem „Vlastní pole“ v detailu akce, texty pozvánky, potvrzení a dalších zpráv na kartě „E-maily“ (náhled a zkušební e-mail sobě jsou po ruce).</li>
+                <li class="list-group-item"><strong>Otevřete akci a přidejte účastníky.</strong> Stránka „Přidat účastníky“ nabídne členy jednotky i podjednotek a u každého jeho e-maily ze skautISu; u účastníků do 18 let jsou předvybraní rodiče, výběr můžete změnit. Nečlena přidáte e-mailem.</li>
+                <li class="list-group-item"><strong>Sledujte přihlášky.</strong> Odkaz v pozvánce je stálý: stejná adresa pro pozvánku, připomínku i oba rodiče. Připomínka jde jen těm, kdo ještě neodpověděli. Účastník může přihlášku podat, měnit i zrušit do uzávěrky (bez ní do konce akce); dřív přihlašování ukončíte uzavřením akce. S kapacitou a čekací listinou se po odhlášení účastníka místo nabídne prvnímu náhradníkovi automaticky.</li>
+                <li class="list-group-item"><strong>Veřejný odkaz</strong> (volitelně) dejte na web nebo do skupiny: kdo se přihlásí a je členem, spáruje se podle jména a data narození; ostatní vyplní údaje nečlena. Koho na akci nechcete, zamítněte, jeho údaje se hned smažou.</li>
+                <li class="list-group-item"><strong>Propište účastníky do skautISu</strong> na kartě „skautIS“. Zápis běží ve vašem prohlížeči po dávkách a Skautské hospodaření pak akci i účastníky vidí. Nečlenům se ve skautISu založí osoba.</li>
+            </ol>
+        </div>
+        <div class="card">
+            <div class="card-header">Časté otázky</div>
+            <div class="card-body">
+                <dl class="mb-0">
+                    <dt>Rodič odkaz nemůže najít.</dt><dd>V detailu přihlášky je tlačítko „Zobrazit odkaz“; pošlete ho znovu, nebo použijte „Vygenerovat nový odkaz“, pokud se starý dostal k někomu cizímu.</dd>
+                    <dt>Kdo vidí datum narození a adresu?</dt><dd>Jen vedoucí s přístupem k jednotce. Datum narození slouží k ověření odkazu, u členů se bere ze skautISu. Po skončení akce se odpovědi po roce mažou a údaje nečlenů anonymizují.</dd>
+                    <dt>E-maily nechodí.</dt><dd>Zkontrolujte, že akce má vybraný Gmail účet a že účet je propojený v menu Jednotka. Průběh odesílání a případné chyby vidíte v panelu úloh nad seznamem přihlášek.</dd>
+                    <dt>Miniweb akce</dt><dd>Karta „Web“: krátká stránka s popisem, soubory (PDF, obrázky) a odkazy pro rodiče, dostupná z pozvánky bez přihlášení.</dd>
+                    <dt>Něco nefunguje.</dt><dd>Použijte odkaz „Nahlásit problém“ v patičce. Hlášení přijde správcům i s technickými údaji, které pomohou chybu najít.</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="card">
+            <div class="card-header">Stavy přihlášky</div>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item"><strong>pozván</strong> – pozvánka odeslána, bez odpovědi</li>
+                <li class="list-group-item"><strong>zobrazeno</strong> – odkaz otevřen, formulář neodeslán</li>
+                <li class="list-group-item"><strong>přihlášen</strong> – účast potvrzena</li>
+                <li class="list-group-item"><strong>čekací listina</strong> – kapacita plná</li>
+                <li class="list-group-item"><strong>odmítl</strong> – nepojede</li>
+                <li class="list-group-item"><strong>zrušeno</strong> – účast zrušena po přihlášení</li>
+                <li class="list-group-item"><strong>zamítnuto</strong> – vedoucí přihlášku odmítl, údaje smazány</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{/block}

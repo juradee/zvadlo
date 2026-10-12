@@ -1,0 +1,15 @@
+{block title}Přihláška – {$event->getName()}{/block}
+
+{block content}
+{include '@event-header.latte'}
+<div class="card">
+    <div class="card-body" data-test="code">
+        <p>Přihláška pro <strong data-test="participant-name">{$registration->getDisplayName()}</strong> už je vyplněná. Pro zobrazení a úpravu pošleme na kontaktní e-mail čtyřmístný kód.</p>
+        <div class="d-flex flex-column flex-md-row gap-3 align-items-md-end">
+            <div>{control codeRequestForm}</div>
+            <div class="flex-grow-1">{control codeForm}</div>
+        </div>
+        <p class="small text-body-secondary mb-0 mt-2">Kontakt na vedoucího: {$event->getContactName()}, <a href="mailto:{$event->getContactEmail()}">{$event->getContactEmail()}</a>.</p>
+    </div>
+</div>
+{/block}

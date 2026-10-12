@@ -8,7 +8,11 @@ export default defineConfig({
         emptyOutDir: true,
         manifest: true,
         rollupOptions: {
-            input: 'frontend/app.ts',
+            // The service worker is a second, self-contained entry; App\Presentation\Pwa\PwaPresenter serves it at /sw.js.
+            input: {
+                app: 'frontend/app.ts',
+                sw: 'frontend/sw.ts',
+            },
         },
     },
 });

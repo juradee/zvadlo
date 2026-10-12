@@ -61,15 +61,13 @@ final class EventRepositoryTest extends Unit
     {
         return new EventInput(
             name: $name,
-            skautisTypeId: 'vyprava',
-            skautisScopeId: 'oddil',
-            isCamp: false,
+            skautisTypeId: '2',
+            skautisScopeId: '2',
             dateFrom: new DateTimeImmutable($from),
             dateTo: new DateTimeImmutable($to ?? $from),
             place: null,
             description: null,
             registrationDeadline: null,
-            editLockDays: 3,
             capacity: null,
             price: null,
             contactName: 'Jan Novák',

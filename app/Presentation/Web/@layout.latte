@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{ifset title}{include title|stripHtml} – {/ifset}Zvadlo</title>
+    {vite('frontend/app.ts')}
+</head>
+<body class="bg-body-tertiary">
+<nav n:class="navbar, bg-body, border-bottom, $environment->showBanner ? 'navbar--' . $environment->color">
+    <div class="container">
+        <span class="navbar-brand">
+            <span n:if="$environment->showBanner" class="badge text-bg-warning me-2" data-test="environment-badge">{$environment->label}</span>
+            Zvadlo
+        </span>
+    </div>
+</nav>
+
+<main class="container py-3" style="max-width: 720px">
+    <div n:foreach="$flashes as $flash" n:class="alert, 'alert-' . $flash->type" role="alert" data-test="flash">{$flash->message}</div>
+    {include content}
+</main>
+
+<footer class="container py-4 small text-body-secondary text-center">
+    Zvadlo – přihlašování na akce Junáka – českého skauta
+</footer>
+</body>
+</html>

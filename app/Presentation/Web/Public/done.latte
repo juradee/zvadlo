@@ -1,0 +1,19 @@
+{block title}Přihláška přijata – {$event->getName()}{/block}
+
+{block content}
+{include '@header.latte'}
+<div class="card">
+    <div class="card-body" data-test="public-done">
+        <p class="mb-2">
+            Přihláška pro <strong data-test="participant-name">{$registration->getDisplayName()}</strong> byla přijata.
+            <span class="badge {$registration->getState()->badgeClass()}" data-test="registration-state">{$registration->getState()->label()}</span>
+        </p>
+        <p n:if="$registration->getState() === App\Model\Registration\RegistrationState::Waitlisted" class="alert alert-warning mb-2">Kapacita akce je naplněná, účastník je náhradník na čekací listině. Když se uvolní místo, dáme vám vědět e-mailem.</p>
+        <p class="mb-0 text-body-secondary">Potvrzení přijde na {$registration->getContactEmail()}. Dotazy: {$event->getContactName()}, <a href="mailto:{$event->getContactEmail()}">{$event->getContactEmail()}</a>{if $event->getContactPhone() !== null}, {$event->getContactPhone()}{/if}.</p>
+    </div>
+    <div class="card-footer">
+        <a n:href="default" class="btn btn-outline-primary" data-test="register-another">Přihlásit dalšího účastníka</a>
+        <span class="small text-body-secondary ms-2">Kontakt a adresa zůstanou předvyplněné.</span>
+    </div>
+</div>
+{/block}

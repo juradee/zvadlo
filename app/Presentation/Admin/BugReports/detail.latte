@@ -1,0 +1,74 @@
+{block title}Hlášení #{$report->getId()} – administrace{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1"><a n:href=":Admin:Dashboard:default" class="link-secondary">Administrace</a> · <a n:href="default" class="link-secondary">Hlášení chyb</a></div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Hlášení #{$report->getId()}</h1>
+    <div class="d-flex flex-wrap gap-2">
+        <a n:if="$report->hasScreenshot()" n:href="screenshot $report->getId()" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" data-test="screenshot-link">Screenshot</a>
+        <a n:if="$report->hasGithubIssue()" href="{$report->getGithubIssueUrl()}" class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" data-test="github-link">GitHub #{$report->getGithubIssueNumber()}</a>
+        {if ! $report->hasGithubIssue() && ! $report->isResolved()}
+            {if $githubConfigured}{form issueForm, class => 'd-inline', data-allow-resubmit => true}{input create}{/form}{else}<span class="small text-body-secondary align-self-center" data-test="github-not-configured">GitHub není nastavený (GITHUB_ISSUES_TOKEN).</span>{/if}
+        {/if}
+    </div>
+</div>
+
+<div n:if="$report->isResolved()" n:class="alert, $report->getResolutionState() === 'fixed' ? 'alert-success' : 'alert-secondary'" data-test="report-resolved">
+    {$report->getResolutionState() === 'fixed' ? 'Opraveno' : 'Zamítnuto'} {$report->getResolvedAt()|date:'d.m.Y H:i'}: {$report->getResolutionMessage()}
+    <span n:if="$report->getResolutionNotificationError() !== null" class="text-danger">· e-mail autorovi selhal: {$report->getResolutionNotificationError()}</span>
+</div>
+<div n:if="$report->getNotificationError() !== null" class="alert alert-warning">E-mail správcům se nepodařilo odeslat: {$report->getNotificationError()}</div>
+<div n:if="$report->getGithubSyncError() !== null" class="alert alert-warning">GitHub: {$report->getGithubSyncError()}</div>
+
+<div class="row g-3">
+    <div class="col-12 col-xl-7">
+        <div class="card mb-3">
+            <div class="card-header">Popis chyby</div>
+            <div class="card-body" data-test="report-description" style="white-space: pre-wrap">{$report->getDescription()}</div>
+        </div>
+        <div class="card mb-3">
+            <div class="card-header">Hlásitel a kontext</div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-4">Uživatel</dt><dd class="col-sm-8">{$report->getReporterDisplayName()} (ID {$report->getReporterUserId()}), {$report->getReporterEmail() ?? 'bez e-mailu'}</dd>
+                    <dt class="col-sm-4">Role a jednotka</dt><dd class="col-sm-8">{$report->getRoleName() ?? '–'}{if $report->getUnitName() !== null}, {$report->getUnitName()} (ID {$report->getUnitId()}){/if}</dd>
+                    <dt class="col-sm-4">Nahlášeno</dt><dd class="col-sm-8">{$report->getCreatedAt()|date:'d.m.Y H:i:s'}{if $report->wasNotificationSent()} · správcům odesláno{/if}</dd>
+                    <dt class="col-sm-4">URL chyby</dt><dd class="col-sm-8 text-break">{$report->getReportedUrl() ?? '–'}</dd>
+                    <dt class="col-sm-4">IP a prohlížeč</dt><dd class="col-sm-8 text-break">{$report->getIpAddress() ?? '–'} · {$report->getUserAgent() ?? '–'}</dd>
+                    <dt class="col-sm-4">Release</dt><dd class="col-sm-8">{$report->getAppRelease()}</dd>
+                </dl>
+            </div>
+        </div>
+        <div n:if="$report->getReplies() !== []" class="card mb-3" data-test="report-replies">
+            <div class="card-header">Odeslané odpovědi</div>
+            <ul class="list-group list-group-flush">
+                <li n:foreach="$report->getReplies() as $reply" class="list-group-item">
+                    <div class="small text-body-secondary">{$reply->getSentAt()|date:'d.m.Y H:i'}{if $reply->getGithubCommentUrl() !== null} · <a href="{$reply->getGithubCommentUrl()}" target="_blank" rel="noopener">komentář na GitHubu</a>{/if}{if $reply->getGithubCommentError() !== null} · <span class="text-danger">GitHub: {$reply->getGithubCommentError()}</span>{/if}</div>
+                    <div style="white-space: pre-wrap">{$reply->getMessage()}</div>
+                </li>
+            </ul>
+        </div>
+        <div class="card">
+            <div class="card-header">Diagnostika</div>
+            <pre class="card-body small mb-0" style="max-height: 30rem; overflow: auto" data-test="report-diagnostics">{$diagnosticsJson}</pre>
+        </div>
+    </div>
+    <div n:if="! $report->isResolved()" class="col-12 col-xl-5">
+        <div n:if="$report->getReporterEmail() !== null" class="card mb-3">
+            <div class="card-header">Odpovědět autorovi</div>
+            <div class="card-body" data-test="reply-form">
+                <p class="small text-body-secondary">Odpověď odejde na {$report->getReporterEmail()}, hlášení zůstane otevřené.</p>
+                {control replyForm}
+                <p n:if="$report->getReplyError() !== null" class="text-danger small mt-2 mb-0">Poslední odpověď selhala: {$report->getReplyError()}</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Vyřídit</div>
+            <div class="card-body" data-test="resolve-form">
+                <p class="small text-body-secondary">Zpráva odejde autorovi e-mailem a hlášení se uzavře jako opravené nebo zamítnuté.</p>
+                {control resolveForm}
+            </div>
+        </div>
+    </div>
+</div>
+{/block}

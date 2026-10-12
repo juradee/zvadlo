@@ -1,0 +1,17 @@
+{block title}Přihláška – {$event->getName()}{/block}
+
+{block content}
+{include '@event-header.latte'}
+<div n:if="$event->getDescription() !== null" class="card mb-3">
+    <div class="card-body">{$event->getDescription()|breaklines}</div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="mb-1">Účastník: <strong data-test="participant-name">{$registration->getDisplayName()}</strong></p>
+        <p class="small text-body-secondary">Přihlášku lze podat, změnit i zrušit do {$event->getLastChangeDay()|date:'d.m.Y'}.</p>
+        <p n:if="! $registration->asksForContactEmail()" class="small text-body-secondary" data-test="mail-addresses">E-maily k akci chodí na {implode(', ', $registration->getMailAddresses())}. Jinou adresu vám nastaví vedoucí.</p>
+        {control registrationForm}
+    </div>
+</div>
+{/block}

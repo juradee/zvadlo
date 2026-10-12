@@ -5,8 +5,6 @@ declare(strict_types=1);
 $finder = (new PhpCsFixer\Finder())
     ->in(__DIR__.'/app')
     ->in(__DIR__.'/bin')
-    ->in(__DIR__.'/packages/skautis-nette/src')
-    ->in(__DIR__.'/packages/skautis-nette/tests')
     ->in(__DIR__.'/tests')
     ->exclude('_output')
     ->exclude('_generated')

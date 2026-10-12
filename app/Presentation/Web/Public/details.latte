@@ -1,0 +1,19 @@
+{block title}Přihláška – {$event->getName()}{/block}
+
+{block content}
+{include '@header.latte'}
+<div class="card">
+    <div class="card-header d-flex justify-content-between"><span>Přihláška</span><span class="text-body-secondary small">krok 2 ze 2</span></div>
+    <div class="card-body">
+        <p class="mb-1">Účastník: <strong data-test="participant-name">{$draft['lastName']} {$draft['firstName']}</strong>{if $draft['birthDate'] !== null}, narozen {$draft['birthDate']|date:'d.m.Y'}{/if} <a n:href="$viaSkautis ? 'skautis' : 'default'" class="small ms-1">změnit</a></p>
+        {if $viaSkautis}
+            <p class="small text-body-secondary" data-test="member-recognised">Osobu ověřil skautIS a údaje o ní máme odtud; stačí kontakt a odpovědi níže.</p>
+        {elseif $isMember}
+            <p class="small text-body-secondary" data-test="member-recognised">Účastníka známe jako člena jednotky; jeho údaje máme ve skautISu, stačí kontakt a odpovědi níže.</p>
+        {else}
+            <p class="small text-body-secondary" data-test="non-member-details">Účastníka mezi členy nemáme, proto potřebujeme i údaje pro evidenci ve skautISu.</p>
+        {/if}
+        {control detailsForm}
+    </div>
+</div>
+{/block}

@@ -1,0 +1,67 @@
+{block title}Miniweb – {$event->getName()}{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1">
+    <a n:href=":Events:Overview:default" class="link-secondary">Akce</a> · <a n:href=":Events:Event:default $event->getId()" class="link-secondary">{$event->getName()}</a>
+</div>
+<h1 class="h3 mb-3">Miniweb akce</h1>
+
+<div class="card mb-3" data-test="web-link-box">
+    <div class="card-body">
+        <label for="web-link" class="form-label small mb-1">Odkaz na miniweb (sdílený, do e-mailů se vkládá jako %odkaz-web%)</label>
+        {* The link gets the full width on a phone; two buttons beside it would squeeze it to a few characters. *}
+        <input type="text" class="form-control font-monospace" readonly value="{$webLink}" id="web-link" data-test="web-link">
+        <div class="d-flex flex-wrap gap-2 mt-2">
+            <button type="button" class="btn btn-outline-secondary" data-copy="#web-link">Kopírovat</button>
+            <a href="{$webLink}" class="btn btn-outline-primary" target="_blank" rel="noopener" data-test="open-web">Zobrazit</a>
+        </div>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-2">
+            <span class="form-text">Hlavička (název, termín, místo, kontakt, popis a tlačítko přihlášky) se skládá z akce sama; sem přidáváte bloky.</span>
+            {form tokenForm, data-allow-resubmit => true}{input regenerate}{/form}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div n:if="$contents === []" class="alert alert-light border" data-test="no-blocks">Miniweb zatím nemá žádný blok; zobrazuje jen hlavičku akce.</div>
+        <div class="list-group" data-test="blocks">
+            <div n:foreach="$contents as $content" class="list-group-item" data-test="block-row">
+                <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+                    <div>
+                        <span class="badge text-bg-light border">{$content->getType()->label()}</span>
+                        <span class="fw-semibold">{$content->getTitle()}</span>
+                        <div class="small text-body-secondary text-truncate" style="max-width: 32rem">
+                            {if $content instanceof App\Model\Web\TextContent}{$content->getBody()|truncate:120}
+                            {elseif $content instanceof App\Model\Web\LinkContent}{$content->getUrl()}
+                            {elseif $content instanceof App\Model\Web\FileContent}{$content->getOriginalName()} · {number_format($content->getSize() / 1024, 0, ',', ' ')} kB
+                            {/if}
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1 align-items-start">
+                        <a n:href="default $event->getId(), blok => $content->getId()" class="btn btn-sm btn-outline-primary">Upravit</a>
+                        {form 'blockActions-' . $content->getId(), class => 'd-flex gap-1', data-allow-resubmit => true}
+                            {input up}{input down}{input remove}
+                        {/form}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header">{$edited instanceof App\Model\Web\TextContent ? 'Upravit text' : 'Nový text'}</div>
+            <div class="card-body" data-test="text-form">{control textForm}</div>
+        </div>
+        <div class="card mb-3">
+            <div class="card-header">{$edited instanceof App\Model\Web\FileContent ? 'Upravit soubor' : 'Nový soubor'}</div>
+            <div class="card-body" data-test="file-form">{control fileForm}</div>
+        </div>
+        <div class="card">
+            <div class="card-header">{$edited instanceof App\Model\Web\LinkContent ? 'Upravit odkaz' : 'Nový odkaz'}</div>
+            <div class="card-body" data-test="link-form">{control linkForm}</div>
+        </div>
+        <a n:if="$edited !== null" n:href="default $event->getId()" class="btn btn-link px-0 mt-2">Zrušit úpravu</a>
+    </div>
+</div>
+{/block}

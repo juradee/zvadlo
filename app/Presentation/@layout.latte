@@ -1,17 +1,21 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="cs" data-pwa="leader">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="{App\Presentation\Pwa\PwaPresenter::THEME_COLOR}">
+    <link rel="manifest" href="{link :Pwa:manifest}">
+    <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png?v={$environment->releaseHash}">
     <title>{ifset title}{include title|stripHtml} – {/ifset}Zvadlo</title>
     {vite('frontend/app.ts')}
 </head>
-<body>
+<body n:attr="data-session-keep-alive-url: $keepAliveUrl ?? null, data-session-keep-alive-interval: isset($keepAliveUrl) ? $keepAliveInterval : null">
 <nav n:class="navbar, navbar-expand-md, bg-body-tertiary, border-bottom, $environment->showBanner ? 'navbar--' . $environment->color">
     <div class="container">
         <a class="navbar-brand" n:href=":Home:default">
             <span n:if="$environment->showBanner" class="badge text-bg-warning me-2" title="{$environment->label}" data-test="environment-badge">{$environment->label}</span>
+            <span n:if="$environment->maintenance" class="badge text-bg-danger me-2" title="Režim údržby je zapnutý, ostatní vidí stránku odstávky" data-test="maintenance-badge">Údržba</span>
             Zvadlo
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-navigation" aria-controls="main-navigation" aria-expanded="false" aria-label="Otevřít menu">
@@ -22,7 +26,10 @@
                 {if $user->isLoggedIn()}
                     <li class="nav-item"><a class="nav-link" n:href=":Dashboard:default">Přehled</a></li>
                     <li class="nav-item"><a class="nav-link" n:href=":Events:Overview:default" data-test="nav-events">Akce</a></li>
-                    <li class="nav-item"><span class="nav-link text-body-secondary" data-test="current-role">{$user->getIdentity()->role->displayName}</span></li>
+                    <li class="nav-item"><a class="nav-link" n:href=":Unit:Settings:default" data-test="nav-unit">Jednotka</a></li>
+                    <li n:if="$canAccessAdministration" class="nav-item"><a class="nav-link" n:href=":Admin:Dashboard:default" data-test="nav-admin">Administrace</a></li>
+                    <li class="nav-item"><a class="nav-link" n:href=":Help:default" data-test="nav-help">Nápověda</a></li>
+                    <li class="nav-item"><span class="nav-link text-body-secondary" data-test="current-role">{$user->getIdentity()->role->displayName} <span class="badge text-bg-light border" data-logout-timer="30" data-test="logout-timer" title="Do odhlášení zbývá 30 min">30 min</span></span></li>
                     <li class="nav-item"><a class="nav-link" n:href=":Auth:out" data-test="logout-link">Odhlásit</a></li>
                 {else}
                     <li class="nav-item"><a class="nav-link" n:href=":Auth:in">Přihlásit</a></li>
@@ -33,12 +40,27 @@
 </nav>
 
 <main class="container py-3">
+    {* Hidden by the attribute: no display utility on these elements, it would override [hidden]. *}
+    <div class="alert alert-warning py-2 small" data-offline-banner hidden data-test="offline-banner">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <span>Zobrazena uložená kopie z <strong data-offline-cached-at></strong>. Bez připojení nelze nic měnit.</span>
+            <a href="" class="ms-auto" data-offline-reload>Načíst znovu</a>
+        </div>
+    </div>
+    <div n:if="$user->isLoggedIn()" class="alert alert-light border py-2 small" data-pwa-install hidden data-test="pwa-install">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <span>Přidejte si Zvadlo na plochu telefonu: seznam přihlášených pak uvidíte i bez signálu.</span>
+            <button type="button" class="btn btn-sm btn-primary ms-auto" data-pwa-install-button>Přidat na plochu</button>
+            <button type="button" class="btn-close" aria-label="Zavřít" data-pwa-install-dismiss></button>
+        </div>
+    </div>
     <div n:foreach="$flashes as $flash" n:class="alert, 'alert-' . $flash->type" role="alert">{$flash->message}</div>
     {include content}
 </main>
 
 <footer class="container py-4 small text-body-secondary border-top">
-    <a href="#" class="link-secondary" data-test="footer-bug-report-link">Nahlásit problém</a>
+    <a n:if="$user->isLoggedIn()" n:href=":BugReport:default url => (string) $presenter->getHttpRequest()->getUrl()" class="link-secondary" data-test="footer-bug-report-link">Nahlásit problém</a>
+    <span n:if="! $user->isLoggedIn()" class="text-body-secondary" data-test="footer-bug-report-link">Nahlásit problém lze po přihlášení</span>
     <span class="mx-2">·</span>
     <span>Zvadlo {$environment->releaseHash}</span>
 </footer>

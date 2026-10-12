@@ -18,7 +18,9 @@ Aplikace běží na http://moje-hospodareni.cz (dočasně sdílená doména s h.
 - [Specifikace](.docs/specifikace.md) – co systém dělá, aktéři, tok přihlášky, oprávnění, datový model, rozhodnutí zadavatele
 - [Implementační plán](.docs/implementacni-plan.md) – technický základ, struktura, proměnné prostředí, fáze
 - [Instalace](.docs/instalace.md) – lokální vývoj v Dockeru
-- [Knihovny skautIS](.docs/skautis-knihovny-3.1.md) – jádro `skaut/skautis` 3.1 a interní balíček napojení na Nette
+- [Nasazení](.docs/nasazeni.md) – GitHub environments, Deployer, cron, údržba, logy, retence
+- [Testovací skautIS](.docs/skautis-testovaci-ucty.md) – veřejné testovací účty a ruční scénáře k ověření
+- [Knihovny skautIS](.docs/skautis-knihovny-3.1.md) – jádro `skaut/skautis` 3.1 a rozšíření `skaut/skautis-nette` 3.1
 - [Pokyny pro agenty](.agents/AGENTS.md) – konvence pro automatizované nástroje
 
 Sesterské projekty, ze kterých Zvadlo přebírá konvence a chování: [Skautské hospodaření](https://github.com/skaut/Skautske-hospodareni)

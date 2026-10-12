@@ -23,6 +23,11 @@ class EventRepository
         return $this->entityManager->getRepository(Event::class)->findOneBy(['unitId' => $unitId, 'slug' => $slug]);
     }
 
+    public function findBySkautisCampId(int $skautisCampId): ?Event
+    {
+        return $this->entityManager->getRepository(Event::class)->findOneBy(['skautisCampId' => $skautisCampId]);
+    }
+
     public function slugExists(int $unitId, string $slug, ?int $ignoreEventId = null): bool
     {
         $event = $this->findBySlug($unitId, $slug);
@@ -74,7 +79,7 @@ class EventRepository
      *
      * @return list<Event>
      */
-    public function findUpcoming(array $unitIds, DateTimeImmutable $now, int $limit): array
+    public function findUpcoming(array $unitIds, DateTimeImmutable $now, ?int $limit = null): array
     {
         if ($unitIds === []) {
             return [];
@@ -124,6 +129,49 @@ class EventRepository
         rsort($years);
 
         return $years;
+    }
+
+    /**
+     * Open events the lock-notice job looks at (the notice day is computed per event).
+     *
+     * @return list<Event>
+     */
+    public function findOpenWithLockNotice(): array
+    {
+        /** @var list<Event> $events */
+        $events = $this->entityManager->getRepository(Event::class)->findBy(['state' => EventState::Open]);
+
+        return $events;
+    }
+
+    /**
+     * Events written to skautIS: only these have a counterpart in h.skauting.
+     *
+     * @return list<Event>
+     */
+    public function findLinked(): array
+    {
+        /** @var list<Event> $events */
+        $events = $this->entityManager->createQuery('SELECT e FROM '.Event::class.' e WHERE e.skautisEventId IS NOT NULL OR e.skautisCampId IS NOT NULL ORDER BY e.id')->getResult();
+
+        return $events;
+    }
+
+    /**
+     * Linked events changed, or with a changed registration, since h.skauting last got them.
+     *
+     * @return list<Event>
+     */
+    public function findLinkedChanged(): array
+    {
+        /** @var list<Event> $events */
+        $events = $this->entityManager->createQuery(
+            'SELECT e FROM '.Event::class.' e WHERE (e.skautisEventId IS NOT NULL OR e.skautisCampId IS NOT NULL) AND ('
+            .'e.hskautingPushedAt IS NULL OR e.updatedAt >= e.hskautingPushedAt OR EXISTS ('
+            .'SELECT r.id FROM '.\App\Model\Registration\Registration::class.' r WHERE r.event = e AND r.updatedAt >= e.hskautingPushedAt)) ORDER BY e.id',
+        )->getResult();
+
+        return $events;
     }
 
     public function add(Event $event): void

@@ -57,6 +57,16 @@ services:
             mailpit:
                 condition: service_started
 
+    # The queue and the daily jobs, as the production cron does: scheduler:run at the start of every minute.
+    scheduler:
+        <<: *php
+        command: ["sh", "-c", "while true; do sleep $$((60 - $$(date +%S | sed 's/^0//'))); php bin/console scheduler:run; done"]
+        depends_on:
+            mariadb:
+                condition: service_healthy
+            mailpit:
+                condition: service_started
+
     php-test:
         <<: *php
         environment:

@@ -1,0 +1,39 @@
+{block title}Statistiky – administrace{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1"><a n:href=":Admin:Dashboard:default" class="link-secondary">Administrace</a></div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Statistiky</h1>
+    <form method="get" class="d-flex gap-2 align-items-center" data-allow-resubmit>
+        <label for="year" class="form-label mb-0 small">Rok</label>
+        <select id="year" name="rok" class="form-select" onchange="this.form.requestSubmit()">
+            <option n:foreach="$years as $y" value="{$y}" n:attr="selected: $y === $year">{$y}</option>
+        </select>
+    </form>
+</div>
+
+<div class="row g-3 mb-3" data-test="statistics-totals">
+    <div n:foreach="$totals as $label => $value" class="col-6 col-md-3">
+        <div class="card text-center"><div class="card-body"><div class="h4 mb-0">{$value}</div><div class="small text-body-secondary">{$label}</div></div></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Po měsících {$year}</div>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0" data-test="statistics-months">
+            <thead><tr><th>Měsíc</th><th class="text-end">Založené akce</th><th class="text-end">Přihlášky</th><th class="text-end">E-maily odeslané</th><th class="text-end">E-maily selhané</th><th class="text-end">Hlášení chyb</th></tr></thead>
+            <tbody>
+                <tr n:foreach="$months as $month => $row">
+                    <td>{$month}/{$year}</td>
+                    <td class="text-end">{$row['events']}</td>
+                    <td class="text-end">{$row['registrations']}</td>
+                    <td class="text-end">{$row['emailsSent']}</td>
+                    <td class="text-end">{$row['emailsFailed']}</td>
+                    <td class="text-end">{$row['bugReports']}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{/block}

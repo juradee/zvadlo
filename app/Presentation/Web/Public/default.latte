@@ -1,0 +1,30 @@
+{block title}Přihláška – {$event->getName()}{/block}
+
+{block content}
+{include '@header.latte'}
+<div n:if="$event->getDescription() !== null" class="card mb-3">
+    <div class="card-body">{$event->getDescription()|breaklines}</div>
+</div>
+
+{if $skautisOnly}
+<div class="card" data-test="skautis-only">
+    <div class="card-header">Přihlášení přes skautIS</div>
+    <div class="card-body">
+        <p>Na tuto akci se přihlašuje účtem ve skautISu: přihlásíte sebe, nebo účastníka, u kterého jste ve skautISu vedeni jako zákonný zástupce. Členové jiných jednotek jsou vítáni.{if $event->getRegistrationDeadline() !== null} Přihlásit se lze do {$event->getRegistrationDeadline()|date:'d.m.Y'}.{/if}</p>
+        <a n:href="skautisLogin" class="btn btn-primary btn-lg w-100" data-test="skautis-login">Přihlásit se přes skautIS</a>
+        <p class="small text-body-secondary mt-2 mb-0">Pozvaní členové mohou dál použít osobní odkaz z e-mailu.</p>
+    </div>
+</div>
+{else}
+<div class="card">
+    <div class="card-header d-flex justify-content-between"><span>Koho přihlašujete?</span><span class="text-body-secondary small">krok 1 ze 2</span></div>
+    <div class="card-body">
+        <p class="small text-body-secondary">Členové jednotky dostali osobní odkaz e-mailem; pokud ho máte, použijte ho. Tady stačí jméno a datum narození účastníka.{if $event->getRegistrationDeadline() !== null} Přihlásit se lze do {$event->getRegistrationDeadline()|date:'d.m.Y'}.{/if}</p>
+        {control participantForm}
+    </div>
+    <div n:if="$skautisLogin" class="card-footer small">
+        Máte účet ve skautISu? <a n:href="skautisLogin" data-test="skautis-login">Přihlaste se přes skautIS</a> a údaje se vyplní samy.
+    </div>
+</div>
+{/if}
+{/block}

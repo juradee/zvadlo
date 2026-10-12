@@ -1,0 +1,117 @@
+{block title}{$registration->getDisplayName()} – {$event->getName()}{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1">
+    <a n:href=":Events:Overview:default" class="link-secondary">Akce</a> · <a n:href=":Events:Event:default $event->getId()" class="link-secondary">{$event->getName()}</a> · <a n:href="default $event->getId()" class="link-secondary">Přihlášky</a>
+</div>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-2 mb-3">
+    <div>
+        <h1 class="h3 mb-1" data-test="registration-name">{$registration->getDisplayName()}</h1>
+        <span class="badge {$registration->getState()->badgeClass()}" data-test="registration-state">{$registration->getState()->label()}</span>
+        <span n:if="! $registration->isMember()" class="badge text-bg-light border">nečlen</span>
+        <span class="badge text-bg-light border" data-test="origin">{$registration->getOrigin()->label()}</span>
+        <span n:if="$registration->getPairingHint() !== null" class="badge text-bg-warning" data-test="pairing-hint">{$registration->getPairingHint()->label()}</span>
+        <span n:if="$registration->isBlocked($now)" class="badge text-bg-danger">ověření zablokováno do {$registration->getBlockedUntil()|date:'H:i'}</span>
+    </div>
+</div>
+
+<div n:if="$personalLink !== null" class="card mb-3" data-test="personal-link-box">
+    <div class="card-body">
+        <label for="personal-link" class="form-label small mb-1">Osobní odkaz účastníka (stálý; stejný dostanou všechny vybrané adresy)</label>
+        <div class="input-group">
+            <input type="text" class="form-control font-monospace" readonly value="{$personalLink}" id="personal-link" data-test="personal-link">
+            <button type="button" class="btn btn-outline-secondary" data-copy="#personal-link">Kopírovat</button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-7">
+        <div class="card mb-3">
+            <div class="card-header">Údaje</div>
+            <div class="card-body">
+                <dl class="row mb-0" data-test="registration-data">
+                    <dt class="col-sm-4">Jméno</dt><dd class="col-sm-8">{if $registration->hasName()}{$registration->getFirstName()} {$registration->getLastName()}{if $registration->getNickName() !== null} ({$registration->getNickName()}){/if}{else}zatím nevyplněno{/if}</dd>
+                    <dt n:if="$registration->getSkautisPersonId() !== null" class="col-sm-4">skautIS</dt><dd n:if="$registration->getSkautisPersonId() !== null" class="col-sm-8">osoba {$registration->getSkautisPersonId()}</dd>
+                    <dt class="col-sm-4">Datum narození</dt><dd class="col-sm-8">{if $registration->getBirthDate() !== null}{$registration->getBirthDate()|date:'d.m.Y'} ({$registration->getBirthDate()->diff($now)->y} let){else}–{/if}</dd>
+                    <dt class="col-sm-4">Pohlaví</dt><dd class="col-sm-8">{$registration->getSex()?->label() ?? '–'}</dd>
+                    <dt n:if="! $registration->isMember()" class="col-sm-4">Adresa</dt><dd n:if="! $registration->isMember()" class="col-sm-8">{$registration->getStreet() ?? '–'}, {$registration->getPostcode() ?? ''} {$registration->getCity() ?? ''}</dd>
+                    <dt class="col-sm-4">Kontaktní e-mail</dt><dd class="col-sm-8">{$registration->getContactEmail() ?? '–'}</dd>
+                    <dt class="col-sm-4">Telefon</dt><dd class="col-sm-8">{$registration->getPhone() ?? '–'}</dd>
+                    <dt class="col-sm-4">Poznámka</dt><dd class="col-sm-8">{$registration->getNote() ?? '–'}</dd>
+                    <dt n:if="$registration->getDeclineReason() !== null" class="col-sm-4">Důvod odmítnutí</dt><dd n:if="$registration->getDeclineReason() !== null" class="col-sm-8">{$registration->getDeclineReason()}</dd>
+                    <dt class="col-sm-4">Pozvánka odeslána</dt><dd class="col-sm-8">{if $registration->getInvitedAt() !== null}{$registration->getInvitedAt()|date:'d.m.Y H:i'}{else}zatím ne{/if}</dd>
+                    <dt class="col-sm-4">Odkaz otevřen</dt><dd class="col-sm-8">{if $registration->getSeenAt() !== null}{$registration->getSeenAt()|date:'d.m.Y H:i'}{else}zatím ne{/if}</dd>
+                    <dt class="col-sm-4">Odpověď</dt><dd class="col-sm-8">{if $registration->getRespondedAt() !== null}{$registration->getRespondedAt()|date:'d.m.Y H:i'}{else}zatím ne{/if}</dd>
+                    <dt n:if="$registration->getRejectedAt() !== null" class="col-sm-4">Zamítnuto</dt><dd n:if="$registration->getRejectedAt() !== null" class="col-sm-8">{$registration->getRejectedAt()|date:'d.m.Y H:i'}, osobní údaje smazány</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div n:if="$fields !== [] && $registration->getState() !== App\Model\Registration\RegistrationState::Rejected" class="card mb-3">
+            <div class="card-header">Vlastní pole</div>
+            <div class="card-body">
+                <dl class="row mb-0" data-test="field-values">
+                    {foreach $fields as $field}
+                        <dt class="col-sm-4">{$field->getLabel()}{if $field->isHidden()} <span class="badge text-bg-secondary">skryté</span>{/if}</dt>
+                        <dd class="col-sm-8">{$registration->getFieldValueText($field) ?: '–'}</dd>
+                    {/foreach}
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Odeslané e-maily</div>
+            <ul class="list-group list-group-flush small" data-test="mail-log">
+                <li n:foreach="$mailLog as $message" class="list-group-item d-flex justify-content-between gap-2">
+                    <span>{$message->getType()->label()} → {$message->getToEmail()}<span n:if="! $message->isSent()" class="text-danger"> · {$message->getError()}</span></span>
+                    <span class="text-body-secondary text-nowrap">{$message->getSentAt()|date:'d.m.Y H:i'} · {$message->getState()->label()}</span>
+                </li>
+                <li n:if="$mailLog === []" class="list-group-item text-body-secondary">Zatím žádný.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Historie</div>
+            <ul class="list-group list-group-flush small" data-test="registration-log">
+                <li n:foreach="$registration->getLogs() as $log" class="list-group-item d-flex justify-content-between gap-2">
+                    <span>{$log->getMessage()}</span>
+                    <span class="text-body-secondary text-nowrap">{$log->getAt()|date:'d.m.Y H:i'}{if $log->getActorUserId() !== null} · uživatel {$log->getActorUserId()}{/if}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5">
+        <div n:if="$registration->getState() !== App\Model\Registration\RegistrationState::Rejected" class="card mb-3">
+            <div class="card-header">Kam chodí pošta</div>
+            <ul class="list-group list-group-flush" data-test="recipients">
+                <li n:foreach="$registration->getRecipients() as $recipient" class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                    <span n:class="! $recipient->isSelected() ? 'text-body-secondary text-decoration-line-through'">{$recipient->getEmail()} <span class="small text-body-secondary text-decoration-none">{$recipient->getName() ?? ''} · {$recipient->getSource()->label()}</span></span>
+                    {if $canEdit}
+                        {form 'recipientActions-' . $recipient->getId(), class => 'd-flex gap-1', data-allow-resubmit => true}{input toggle}{ifset $form[remove]}{input remove}{/ifset}{/form}
+                    {/if}
+                </li>
+                <li n:if="$registration->getRecipients() === []" class="list-group-item text-danger" data-test="no-email">
+                    Žádný e-mail; pozvánku nelze odeslat.
+                </li>
+            </ul>
+            <div n:if="$canEdit" class="card-body border-top">
+                {control recipientForm}
+            </div>
+        </div>
+        <div n:if="$canPair" class="card mb-3">
+            <div class="card-header">Spárovat se členem</div>
+            <div class="card-body" data-test="pair-form">
+                <p class="small text-body-secondary">Přihláška přišla veřejným odkazem a není spojená s osobou ve skautISu. Nabízejí se členové se stejným datem narození nebo příjmením.</p>
+                {control pairForm}
+            </div>
+        </div>
+        <div n:if="$canEdit && $registration->getState() !== App\Model\Registration\RegistrationState::Rejected" class="card">
+            <div class="card-header">Akce vedoucího</div>
+            <div class="card-body" data-test="leader-actions">
+                {control actionForm}
+            </div>
+        </div>
+    </div>
+</div>
+{/block}

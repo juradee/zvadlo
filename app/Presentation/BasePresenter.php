@@ -18,5 +18,8 @@ abstract class BasePresenter extends Presenter
         parent::beforeRender();
 
         $this->template->environment = $this->environmentInfo;
+        $this->template->keepAliveUrl = null;
+        $this->template->keepAliveInterval = 0;
+        $this->template->canAccessAdministration = false;
     }
 }

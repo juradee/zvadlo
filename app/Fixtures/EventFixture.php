@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Fixtures;
 
 use App\Model\Event\Event;
+use App\Model\Event\EventField;
+use App\Model\Event\EventFieldType;
 use App\Model\Event\EventInput;
 use App\Model\Event\EventService;
 use App\Model\Event\EventState;
+use App\Model\Event\PublicRegistration;
+use App\Model\Skautis\Dto\Camp;
 use DateTimeImmutable;
 use Doctrine\Common\DataFixtures\FixtureInterface;
 use Doctrine\Persistence\ObjectManager;
@@ -27,15 +31,13 @@ final class EventFixture implements FixtureInterface
 
         $trip = new Event($troopId, 'podzimni-vyprava', new EventInput(
             name: 'Podzimní výprava',
-            skautisTypeId: 'vyprava',
-            skautisScopeId: 'oddil',
-            isCamp: false,
+            skautisTypeId: '2',
+            skautisScopeId: '2',
             dateFrom: $nextMonth->modify('+4 days'),
             dateTo: $nextMonth->modify('+6 days'),
             place: 'Základna Jelení louka',
             description: "Sraz v pátek v 16:30 na nádraží.\n\nS sebou spacák, karimatku a dobrou náladu.",
             registrationDeadline: $nextMonth,
-            editLockDays: 3,
             capacity: 24,
             price: 450,
             contactName: 'Jan Novák',
@@ -43,42 +45,59 @@ final class EventFixture implements FixtureInterface
             contactPhone: '+420 777 000 100',
         ), EventService::token(), 1, $now);
         $trip->changeState(EventState::Open, $now);
+        // One field of every type, so the forms, the detail and the export show them.
+        $trip->addField(new EventField($trip, EventFieldType::Text, 'Alergie a léky', 'Léky s dávkováním, alergie včetně potravinových.', false, 1));
+        $trip->addField(new EventField($trip, EventFieldType::Choice, 'Doprava', null, true, 2, ['autobus', 'vlastní']));
+        $trip->addField(new EventField($trip, EventFieldType::MultiChoice, 'Přijede na', 'Lze vybrat více dnů.', false, 3, ['pátek', 'sobota', 'neděle']));
+        $trip->addField(new EventField($trip, EventFieldType::Boolean, 'Souhlasím s focením účastníka na akci', 'Fotky jen pro kroniku a web oddílu.', false, 4));
 
         $party = new Event($unitId, 'vanocni-besidka', new EventInput(
             name: 'Vánoční besídka střediska',
-            skautisTypeId: 'jina',
-            skautisScopeId: 'stredisko',
-            isCamp: false,
+            skautisTypeId: '9',
+            skautisScopeId: '3',
             dateFrom: $now->modify('20 december')->setTime(0, 0),
             dateTo: $now->modify('20 december')->setTime(0, 0),
             place: 'Klubovna',
             description: null,
             registrationDeadline: null,
-            editLockDays: 1,
             capacity: null,
             price: null,
             contactName: 'Jan Novák',
             contactEmail: 'jan.novak@example.cz',
             contactPhone: null,
+            publicRegistration: PublicRegistration::Open,
         ), EventService::token(), 1, $now);
+        $party->changeState(EventState::Open, $now);
+        $party->addField(new EventField($party, EventFieldType::Boolean, 'Potvrzuji, že účastník přijde až po skončení školní družiny', null, true, 1));
+        $party->addField(new EventField($party, EventFieldType::Text, 'Co přinese na stůl', 'Nepovinné: cukroví, chlebíčky…', false, 2));
 
-        $camp = new Event($troopId, Strings::webalize('Letní tábor '.($now->format('Y') - 1)), new EventInput(
-            name: 'Letní tábor '.($now->format('Y') - 1),
-            skautisTypeId: 'vyprava',
-            skautisScopeId: 'oddil',
-            isCamp: true,
+        $campYear = (int) $now->format('Y') - 1;
+        $camp = new Event($troopId, Strings::webalize('Letní tábor '.$campYear), new EventInput(
+            name: 'Letní tábor '.$campYear,
+            skautisTypeId: null,
+            skautisScopeId: null,
             dateFrom: $now->modify('-1 year')->modify('1 july')->setTime(0, 0),
             dateTo: $now->modify('-1 year')->modify('14 july')->setTime(0, 0),
             place: 'Tábořiště U Tří dubů',
             description: null,
             registrationDeadline: null,
-            editLockDays: 7,
             capacity: null,
             price: 3200,
             contactName: 'Jan Novák',
             contactEmail: 'jan.novak@example.cz',
             contactPhone: null,
         ), EventService::token(), 1, $now);
+        $camp->linkSkautisCamp(new Camp(
+            5000,
+            'Letní tábor '.$campYear,
+            $troopId,
+            'Oddíl',
+            $now->modify('-1 year')->modify('1 july')->setTime(0, 0),
+            $now->modify('-1 year')->modify('14 july')->setTime(0, 0),
+            'Tábořiště U Tří dubů',
+            'approvedParent',
+            'Schválený',
+        ), $now);
         $camp->changeState(EventState::Open, $now);
         $camp->changeState(EventState::Closed, $now);
         $camp->changeState(EventState::Archived, $now);
@@ -92,7 +111,7 @@ final class EventFixture implements FixtureInterface
     /**
      * @return array{int, int}
      */
-    private static function unitIds(): array
+    public static function unitIds(): array
     {
         $ids = array_map(intval(...), explode(',', (string) (getenv('FIXTURE_UNIT_IDS') ?: '1002,1003')));
 

@@ -1,11 +1,12 @@
 # Knihovny skautIS: jádro 3.1 a Nette napojení
 
-Podprojekt Zvadla. Stav analýzy a rozhodnutí k 29. 9. 2026.
+Podprojekt Zvadla. Stav analýzy a rozhodnutí k 29. 9. 2026; výsledný stav po vydání obou knihoven upstream
+(7. 10. 2026) je v kapitole 7.
 
 | Balíček | Upstream | Fork | Složka ve workspace | Rozhodnutí |
 |---|---|---|---|---|
-| `skaut/skautis` (na Packagistu zatím `skautis/skautis`; jádro: SOAP klient, `User`, `Config`, `WsdlManager`, cache dekorátor, PSR-14 události) | `skaut/Skautis` | `webwingscz/Skautis` | `Skautis` (klon má checkout `2.x`, práce jde z `3.x`) | **verze 3.1** pro PHP 8.4+, viz kapitola 3 |
-| `skautis/nette` (DI extension, session adaptér, PSR-16 adaptér, Tracy panel) | `skaut/SkautisNette` | `webwingscz/SkautisNette` | `SkautisNette` | **zatím se nepoužije**; Nette napojení je interní balíček Zvadla (kapitola 4), z něj lze později udělat SkautisNette 3.1 nebo nový balíček |
+| `skaut/skautis` (na Packagistu zatím jen staré `skautis/skautis`; jádro: SOAP klient, `User`, `Config`, `WsdlManager`, cache dekorátor, PSR-14 události) | `skaut/Skautis` | `webwingscz/Skautis` | `Skautis` (větev `3.1`, sloučená upstream) | **verze 3.1** pro PHP 8.4+, viz kapitola 3; vydaná jako `v3.1.0` 7. 10. 2026 |
+| `skautis/nette` (DI extension, session adaptér, PSR-16 adaptér, Tracy panel) | `skaut/SkautisNette` | `webwingscz/SkautisNette` | `SkautisNette` (větev `3.1`, sloučená upstream) | **verze 3.1** jako `skaut/skautis-nette` (namespace `Skaut\SkautisNette`), vznikla z interního balíčku Zvadla, viz kapitoly 4 a 7 |
 
 ## 1. Proč navázat na 3.x jádra, ne na 2.x
 
@@ -42,7 +43,7 @@ Nálezy z kódu větve `3.x` (`f90c8e4`):
 
 1. **Název balíčku.** Tagy 3.x mají v `composer.json` `"name": "skaut/skautis"` (přejmenování `995ead1`),
    zatímco Packagist i SRS znají starší `skautis/skautis`. Rozhodnutí zadavatele: 3.1 **zachová `skaut/skautis`**
-   a řídí se přejmenováním z 3.x. Zvadlo i balíček napojení proto vyžadují `skaut/skautis ^3.1`; přes `vcs`
+   a řídí se přejmenováním z 3.x. Zvadlo bere větev `3.1` (`skaut/skautis 3.1.x-dev`), balíček napojení `^3.1`; přes `vcs`
    repozitář se název bere z `composer.json` forku, takže se spáruje. Upstream vydání na Packagistu bude
    pod novým názvem; `suggest` v SkautisNette a v dokumentaci se pak upraví. Do `authors` přidán
    Jiří Dorazil (https://github.com/juradee).
@@ -78,10 +79,16 @@ Co se **nemění**: namespace `Skaut\Skautis`, veřejné API (`Skautis`, `User`,
 `WebServiceInterface`, `WebServiceFactoryInterface`, `CacheDecorator`, události), konstanty `WebServiceName`
 (žádný přechod na `enum`, aby zůstal zpětně kompatibilní řetězcový přístup), aliasy služeb (`usr`, `org`, `event`, …).
 
-Vydání: tag `v3.1.0` ve forku; Zvadlo ho bere přes `repositories: [{type: vcs, url: https://github.com/webwingscz/Skautis}]`
-a `"skaut/skautis": "^3.1"`, dokud změny nevyjdou upstream na Packagistu.
+Vydání: větev `3.1` forku byla 7. 10. 2026 sloučena upstream a vydána jako `skaut/skautis` **v3.1.0**
+(`skaut/Skautis`, commit `4ec9ca3`). Zvadlo ji bere přes `repositories: [{type: vcs, url: https://github.com/skaut/Skautis.git}]`
+a `"skaut/skautis": "^3.1"`, dokud knihovna nevyjde na Packagistu (ten zná jen staré `skautis/skautis`).
+Mezi 2. a 7. 10. 2026 Zvadlo používalo přímo větev `3.1` forku (`3.1.x-dev`), protože tag `v3.1.0` ve forku vznikl
+omylem a byl starší než větev; upstream tag je správný.
 
 ## 4. Nette napojení: interní balíček `webwingscz/skautis-nette`
+
+Kapitola popisuje interní balíček tak, jak vznikl ve fázi 0. 7. 10. 2026 šel upstream jako SkautisNette 3.1
+(kapitola 7) a ze Zvadla je smazaný.
 
 Rozšíření `skautis/nette` přidává nad jádrem jen DI extension, session adaptér, PSR-16 adaptér pro
 `CacheDecorator` a Tracy panel (asi 670 řádků). Zvadlo potřebuje z toho session adaptér, registraci
@@ -126,14 +133,13 @@ Pravidla balíčku:
   s cestou, kterou je třeba doplnit. Přihlášení projde stejnou cestou jako doopravdy: test pošle na login
   routu POST se `skautIS_Token` z fixtur a `LoginUpdateRefresh.json` vrací `DateLogout` v budoucnosti.
   Díky tomu má Zvadlo **jedinou** implementaci `SkautisGateway` a testy procházejí skutečným mapováním.
-- Vlastní `phpunit.xml.dist`, PHPStan level max, php-cs-fixer se stejnými pravidly jako Zvadlo.
-  `make test-packages` spouští testy balíčku, `make ci` je zahrnuje.
-- Zvadlo ho bere přes `repositories: [{type: path, url: packages/skautis-nette, options: {symlink: true}}]`
-  a `"webwingscz/skautis-nette": "@dev"`. Produkční build používá `COMPOSER_MIRROR_PATH_REPOS=1`, aby ve
-  `vendor/` byla kopie, ne symlink (rsync na hosting).
-- Vyčlenění do vlastního repozitáře, až na to dojde: `git subtree split --prefix=packages/skautis-nette`,
-  potom se `repositories` nahradí verzí z Packagistu. Pro variantu „update SkautisNette“ se přenese obsah
-  `src/` a testy do forku `webwingscz/SkautisNette` s namespace `Skautis\Nette` a licencí BSD-3-Clause.
+- Měl vlastní `phpunit.xml.dist`, PHPStan level max a php-cs-fixer se stejnými pravidly jako Zvadlo;
+  `make test-packages` spouštěl jeho testy.
+- Do 7. 10. 2026 ho Zvadlo bralo jako composer path repository (`webwingscz/skautis-nette` `@dev`), produkční
+  build s `COMPOSER_MIRROR_PATH_REPOS=1`, aby ve `vendor/` byla kopie, ne symlink. Pak šel obsah `src/`, fixtur
+  a testů do forku `webwingscz/SkautisNette` (větev `3.1`, namespace `Skaut\SkautisNette`, licence BSD-3-Clause,
+  testy v Nette Testeru, navíc PSR-16 `CacheAdapter` a povinný `testMode`) a upstream ho vydal jako
+  `skaut/skautis-nette` v3.1.0; viz kapitola 7.
 
 ## 5. h.skauting
 
@@ -148,9 +154,36 @@ služba vyhodí `WebServiceNotFoundException`. Konfigurace `skautis:` v NEONu z�
 
 1. Jádro: v klonu `Skautis` přepnout na `3.x`, větev `3.1`, změny z kapitoly 3, testy zelené na PHP 8.4
    i 8.5 v Dockeru (`php:8.4-cli` a `php:8.5-cli` s `ext-soap`, Composer v kontejneru; na hostiteli se nic
-   neinstaluje), tag `v3.1.0`.
+   neinstaluje); Zvadlo používá přímo větev `3.1`. **Hotovo**, vydáno jako v3.1.0.
 2. Balíček `packages/skautis-nette` ve Zvadle podle kapitoly 4, včetně fixtur a testů; vzniká ve fázi 0
-   Zvadla spolu s kostrou aplikace.
-3. Kouřový test: fáze 0 Zvadla se přihlásí přes testovací skautIS (`dev`) i přes fixtury (`ci`).
+   Zvadla spolu s kostrou aplikace. **Hotovo.**
+3. Kouřový test: fáze 0 Zvadla se přihlásí přes testovací skautIS (`dev`) i přes fixtury (`ci`). **Hotovo.**
 4. Pull request upstream do `skaut/Skautis`; po vydání na Packagistu Zvadlo smaže `vcs` repozitář.
+   **Sloučeno a vydáno 7. 10. 2026 (v3.1.0)**; na Packagistu zatím není, `vcs` repozitář zůstává.
 5. Rozhodnutí zadavatele, zda balíček vydat jako nový, nebo z něj udělat SkautisNette 3.1.
+   **Rozhodnuto: SkautisNette 3.1** (`skaut/skautis-nette` v3.1.0), viz kapitola 7.
+
+## 7. Stav k 7. 10. 2026: obě knihovny vydané upstream
+
+| Balíček | Verze ve Zvadle | Zdroj pro Composer | Packagist |
+|---|---|---|---|
+| `skaut/skautis` | `^3.1` (v3.1.0, commit `4ec9ca3` = sloučená větev `3.1` forku) | `{type: vcs, url: https://github.com/skaut/Skautis.git, no-api: true}` | jen staré `skautis/skautis` |
+| `skaut/skautis-nette` | `^3.1` (v3.1.0, commit `5db2f9a` = sloučená větev `3.1` forku) | `{type: vcs, url: https://github.com/skaut/SkautisNette.git, no-api: true}` | jen staré `skautis/nette` |
+
+Co se tím ve Zvadle změnilo:
+
+- `packages/skautis-nette` je smazaný a s ním `make test-packages`, jeho cesty v `phpstan.neon`
+  a `.php-cs-fixer.dist.php` a `COMPOSER_MIRROR_PATH_REPOS` v build jobu (ve `vendor/` už není symlink).
+- `config.neon`: `extensions: skautis: Skaut\SkautisNette\SkautisExtension` (dřív
+  `Webwings\SkautisNette\DI\SkautisExtension`). Klíče konfigurace jsou stejné (`applicationId`, `testMode`, `cache`,
+  `compression`, `profiler`, `fixtures`); `testMode` je nově povinný, Zvadlo ho bere ze `SKAUTIS_TEST_MODE`.
+- `.env.ci`: `SKAUTIS_FIXTURES=vendor/skaut/skautis-nette/resources/fixtures`. Sada fixtur je totožná s tou
+  z interního balíčku.
+- Sekce session se jmenuje podle třídy adaptéru, tedy `Skaut\SkautisNette\SessionAdapter`; po nasazení se
+  uživatelé jednou odhlásí.
+- Rozšíření má navíc PSR-16 `Skaut\SkautisNette\Cache\CacheAdapter` nad `nette/caching` (Zvadlo ho nepoužívá,
+  cachuje typované DTO v `SkautisGateway`), dispatcher respektuje `StoppableEventInterface` a panel se do Tracy
+  registruje v `initialize()` kontejneru.
+- Testy rozšíření běží v jeho repozitáři (Nette Tester, `make ci` v klonu `SkautisNette`); ve Zvadle zůstávají
+  jen testy aplikace.
+- Až obě knihovny vyjdou na Packagistu, stačí z `composer.json` smazat blok `repositories`.

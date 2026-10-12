@@ -35,9 +35,16 @@ final class BootstrapFormRenderer extends DefaultFormRenderer
         $this->wrappers['error']['container'] = 'div class="alert alert-danger"';
         $this->wrappers['error']['item'] = 'p class="mb-0"';
         $this->wrappers['hidden']['container'] = null;
+        $this->wrappers['group']['container'] = 'div';
+        $this->wrappers['group']['label'] = 'h2 class="h5 mt-4"';
+        $this->wrappers['group']['description'] = 'p class="text-body-secondary"';
     }
 
-    public function render(Form $form, ?string $mode = null): string
+    /**
+     * Bootstrap classes on the controls themselves (FormFactory runs this on render), so a form rendered by
+     * hand with n:name gets them as well; a class written in the template replaces them.
+     */
+    public static function decorate(Form $form): void
     {
         foreach ($form->getControls() as $control) {
             if (! $control instanceof BaseControl) {
@@ -68,7 +75,5 @@ final class BootstrapFormRenderer extends DefaultFormRenderer
                 $control->getControlPrototype()->addClass('is-invalid');
             }
         }
-
-        return parent::render($form, $mode);
     }
 }

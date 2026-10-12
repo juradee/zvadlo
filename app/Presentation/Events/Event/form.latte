@@ -1,11 +1,17 @@
-{block title}{$event !== null ? 'Upravit akci' : 'Nová akce'}{/block}
+{block title}{$event !== null ? 'Upravit akci' : ($camp !== null ? 'Nový tábor' : 'Nová akce')}{/block}
 
 {block content}
 <div class="small text-body-secondary mb-1">
     <a n:href=":Events:Overview:default" class="link-secondary">Akce</a>
     {if $event !== null} · <a n:href="default $event->getId()" class="link-secondary">{$event->getName()}</a>{/if}
+    {if $camp !== null} · <a n:href="createCamp" class="link-secondary">Tábory ze skautISu</a>{/if}
 </div>
-<h1 class="h3 mb-3">{$event !== null ? 'Upravit akci' : 'Nová akce'}</h1>
+<h1 class="h3 mb-3">{$event !== null ? 'Upravit akci' : ($camp !== null ? 'Nový tábor' : 'Nová akce')}</h1>
+
+<div n:if="$camp !== null" class="alert alert-info" data-test="camp-info">
+    Tábor <strong>{$camp->name}</strong> ({$camp->dateFrom|date:'d.m.Y'} – {$camp->dateTo|date:'d.m.Y'}, {$camp->unitName}) se přebírá ze skautISu, stav „{$camp->stateName}“.
+    Název, termín a místo se ve Zvadle neupravují.
+</div>
 
 <div class="row">
     <div class="col-12 col-lg-8">

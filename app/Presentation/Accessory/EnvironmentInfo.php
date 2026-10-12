@@ -15,6 +15,7 @@ final readonly class EnvironmentInfo
         public string $label,
         public string $color,
         public string $releaseHash,
+        public bool $maintenance = false,
     ) {
     }
 }

@@ -1,0 +1,9 @@
+<div class="mb-3">
+    <div class="small text-body-secondary">Přihláška na akci</div>
+    <h1 class="h3 mb-1" data-test="event-name">{$event->getName()}</h1>
+    <p class="mb-0">
+        {$event->getDateFrom()|date:'d.m.Y'}{if $event->getDateTo() != $event->getDateFrom()} – {$event->getDateTo()|date:'d.m.Y'}{/if}
+        <span n:if="$event->getPlace() !== null"> · {$event->getPlace()}</span>
+        <span n:if="$event->getPrice() !== null"> · {$event->getPrice()} Kč</span>
+    </p>
+</div>

@@ -9,5 +9,6 @@
         "skipLibCheck": true,
         "types": ["vite/client"]
     },
-    "include": ["frontend"]
+    "include": ["frontend"],
+    "exclude": ["frontend/sw.ts"]
 }

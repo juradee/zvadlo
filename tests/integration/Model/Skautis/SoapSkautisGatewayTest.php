@@ -23,6 +23,36 @@ final class SoapSkautisGatewayTest extends Unit
         $this->gateway->logout();
     }
 
+    public function testTemporaryLoginRestoresTheLeaderLogin(): void
+    {
+        $skautis = $this->tester->grabService(\Skaut\Skautis\Skautis::class);
+        \assert($skautis instanceof \Skaut\Skautis\Skautis);
+        $this->gateway->login(['skautIS_Token' => '00000000-0000-4000-8000-000000000001', 'skautIS_IDRole' => '10', 'skautIS_IDUnit' => '1003', 'skautIS_DateLogout' => '31. 12. 2099 23:59:59']);
+
+        $seen = $this->gateway->withTemporaryLogin(
+            ['skautIS_Token' => '00000000-0000-4000-8000-000000000002', 'skautIS_IDRole' => '11', 'skautIS_IDUnit' => '1002', 'skautIS_DateLogout' => '31. 12. 2099 23:59:59'],
+            static fn (): ?string => $skautis->getUser()->getLoginId(),
+        );
+
+        self::assertSame('00000000-0000-4000-8000-000000000002', $seen, 'the reads ran with the participant token');
+        self::assertSame('00000000-0000-4000-8000-000000000001', $skautis->getUser()->getLoginId(), 'the leader login is back');
+        self::assertSame(10, $this->gateway->getRoleId());
+
+        $this->gateway->logout();
+        $this->gateway->withTemporaryLogin(['skautIS_Token' => '00000000-0000-4000-8000-000000000002'], static fn (): null => null);
+        self::assertNull($skautis->getUser()->getLoginId(), 'without a leader nothing stays behind');
+    }
+
+    public function testLoginRefreshWithoutLogoutDateEndsTheLogin(): void
+    {
+        // The fixture answers LoginUpdateRefresh for this token with an empty result, as skautIS may.
+        $this->gateway->login(['skautIS_Token' => '00000000-0000-4000-8000-0000000000ff', 'skautIS_IDRole' => '10', 'skautIS_IDUnit' => '1003', 'skautIS_DateLogout' => '31. 12. 2099 23:59:59']);
+
+        self::assertFalse($this->gateway->isLoggedIn(), 'an unconfirmed login is no login, not an error');
+        $this->expectException(\App\Model\Skautis\SkautisException::class);
+        $this->gateway->refreshLogin();
+    }
+
     public function testLoginRolesAndUnits(): void
     {
         self::assertFalse($this->gateway->isLoggedIn());

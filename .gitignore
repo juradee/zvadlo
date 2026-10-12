@@ -1,6 +1,8 @@
+/.env
 /.env.local
 /.env.*.local
 /make.local
+/.deployment/
 /vendor/
 /node_modules/
 /temp/*
@@ -11,7 +13,7 @@
 !/uploads/.gitkeep
 /www/assets/
 /tests/_output/
-/tests/_support/_generated/
+/tests/Support/_generated/
 /app/config/google-credentials.json
 /.phpunit.cache/
 /.php-cs-fixer.cache

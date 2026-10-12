@@ -1,0 +1,130 @@
+{block title}Přihlášky – {$event->getName()}{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1">
+    <a n:href=":Events:Overview:default" class="link-secondary">Akce</a> · <a n:href=":Events:Event:default $event->getId()" class="link-secondary">{$event->getName()}</a>
+</div>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Přihlášky</h1>
+    <div class="d-flex flex-wrap gap-2">
+        <a n:if="$canEdit" n:href=":Events:Invite:default $event->getId()" class="btn btn-primary" data-test="invite-link">Přidat účastníky</a>
+        <a n:href="export $event->getId()" class="btn btn-outline-secondary" data-test="export-link">Export CSV</a>
+    </div>
+</div>
+
+<div n:if="$canSend" class="card mb-3" data-test="send-panel">
+    <div class="card-body">
+        <form n:name="sendForm" data-allow-resubmit>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <button n:name="invitations" data-test="send-invitations" n:attr="disabled: $invitable === 0">Odeslat pozvánky ({$invitable})</button>
+                <button n:name="reminder" data-test="send-reminder" n:attr="disabled: $remindable === 0">Poslat připomínku ({$remindable})</button>
+                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#info-box" data-test="toggle-info">Poslat zprávu…</button>
+            </div>
+            <div class="collapse mt-3" id="info-box">
+                <div class="row g-3">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label small">Komu</label>
+                        {input states}
+                    </div>
+                    <div class="col-12 col-md-8">
+                        <label n:name="note" class="form-label small">{$form['note']->getCaption()}</label>
+                        <textarea n:name="note" class="form-control" rows="4" data-test="info-note"></textarea>
+                        <div class="form-text">Text se vloží do e-mailu „Zpráva účastníkům“ místo %poznamka%.</div>
+                        <button n:name="info" class="btn btn-outline-primary btn-sm mt-2" data-test="send-info">Poslat zprávu</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div n:if="$canEdit && ! $canSend" class="alert alert-warning" data-test="no-account">Akce nemá vybraný odesílací e-mailový účet, pozvánky nelze odeslat. Propojte Gmail účet v nastavení jednotky a vyberte ho v úpravě akce.</div>
+
+{* Automatic mails of single registrations as one summary; how they go through the queue does not matter here. *}
+<div n:if="$automaticActive > 0 || $automaticFailed > 0" n:class="alert, 'py-2', $automaticFailed > 0 ? 'alert-danger' : 'alert-info'" n:attr="data-task-poll: $automaticActive > 0 ? $presenter->link('automaticStatus!') : null" data-test="automatic-emails">
+    <div class="d-flex flex-wrap justify-content-between gap-2 small">
+        <span><strong>Automatické e-maily</strong> · <span data-task-label>{$automaticLabel}</span></span>
+        <span n:if="$automaticFailed > 0 && $canEdit">{form retryAutomaticForm, class => 'd-inline', data-allow-resubmit => true}{input retry}{/form}</span>
+    </div>
+</div>
+
+<div n:foreach="$tasks as $task" n:class="alert, 'py-2', $task->getState() === App\Model\Task\TaskState::Failed ? 'alert-danger' : ($task->getState()->isActive() ? 'alert-info' : 'alert-light border')" n:attr="data-task-poll: $task->getState()->isActive() ? $presenter->link('taskStatus!', ['task' => $task->getId()]) : null" data-test="task-{$task->getState()->value}">
+    <div class="d-flex flex-wrap justify-content-between gap-2 small">
+        <span><strong>{$task->getType()->label()}</strong> · {$task->getCreatedAt()|date:'d.m.Y H:i'} · <span data-task-label>{$task->getProgressLabel()}</span></span>
+        <span n:if="$task->getState() === App\Model\Task\TaskState::Failed && $canEdit">{form 'retryTask-' . $task->getId(), class => 'd-inline', data-allow-resubmit => true}{input retry}{/form}</span>
+    </div>
+    <div n:if="$task->getError() !== null" class="small">{$task->getError()}</div>
+    <div n:if="$task->getState()->isActive()" class="progress mt-1" style="height: 6px"><div class="progress-bar" data-task-bar style="width: {$task->getProgressPercent()}%"></div></div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-3" data-test="state-counts">
+    <a n:href="default $event->getId()" n:class="btn, btn-sm, $state === null ? 'btn-dark' : 'btn-outline-dark'">vše <span class="badge text-bg-light">{$total}</span></a>
+    <a n:foreach="$states as $s" n:href="default $event->getId(), stav => $s->value" n:class="btn, btn-sm, $state === $s ? 'btn-dark' : 'btn-outline-dark', $s === App\Model\Registration\RegistrationState::Rejected && $counts[$s->value] === 0 ? 'd-none'">
+        {$s->label()} <span class="badge {$s->badgeClass()}" data-test="count-{$s->value}">{$counts[$s->value]}</span>
+    </a>
+</div>
+
+<div n:if="$places['waitlisted'] !== []" n:class="alert, 'py-2', $places['free'] === 0 ? 'alert-light border' : 'alert-info'" data-test="waitlist-panel">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        {if $places['free'] === 0}
+            <span>Akce je plná, na čekací listině je {count($places['waitlisted'])}. Náhradníka lze přijmout nad kapacitu v jeho přihlášce.</span>
+        {else}
+            <span>Volná místa: <strong>{$places['free'] ?? 'bez omezení'}</strong>. Na čekací listině je {count($places['waitlisted'])}, první je <strong>{$places['waitlisted'][0]->getDisplayName()}</strong>.</span>
+            {if $canEdit}{form promoteNextForm, class => 'ms-auto', data-allow-resubmit => true}{input promote}{/form}{/if}
+        {/if}
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3" data-allow-resubmit>
+    <input n:if="$state !== null" type="hidden" name="stav" value="{$state->value}">
+    <div class="col-9 col-md-4">
+        <input type="search" name="hledat" value="{$search}" class="form-control" placeholder="hledat jméno nebo e-mail" aria-label="Hledat">
+    </div>
+    <div class="col-3 col-md-2 d-grid"><button class="btn btn-outline-secondary">Hledat</button></div>
+</form>
+
+<div n:if="$registrations === []" class="alert alert-light border" data-test="no-registrations">
+    Zatím nikdo{if $state !== null} ve stavu „{$state->label()}“{/if}.{if $canEdit} <a n:href=":Events:Invite:default $event->getId()">Přidat účastníky</a>.{/if}
+</div>
+
+<div n:if="$registrations !== []" class="list-group" data-test="registration-list">
+    <div n:foreach="$registrations as $registration" class="list-group-item py-2" data-test="registration-item">
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-1">
+            <div>
+                <a n:href="detail $event->getId(), $registration->getId()" class="fw-semibold" data-test="registration-name">{$registration->getDisplayName()}</a>
+                <span n:if="! $registration->isMember()" class="badge text-bg-light border">nečlen</span>
+                <span n:if="$registration->getOrigin() !== App\Model\Registration\RegistrationOrigin::Invited" class="badge text-bg-light border">{$registration->getOrigin()->label()}</span>
+                <span n:if="$registration->getPairingHint() !== null" class="badge text-bg-warning" data-test="pairing-hint">{$registration->getPairingHint()->label()}</span>
+                <span n:if="$registration->getState()->isPending() && $registration->getInvitedAt() === null" class="badge text-bg-light border" data-test="not-sent">pozvánka neodeslána</span>
+                <div class="small text-body-secondary">
+                    {if $registration->getBirthDate() !== null}{$registration->getBirthDate()->diff($now)->y} let{/if}
+                    {if $registration->getRecipients() === [] && $registration->getState()->isPending()}
+                        · <span class="text-danger" data-test="no-email">bez e-mailu</span>
+                    {elseif ! $registration->hasSelectedRecipients() && $registration->getState()->isPending()}
+                        · <span class="text-danger" data-test="no-email">žádná adresa není vybraná</span>
+                    {/if}
+                </div>
+                {* Where the mail goes, editable in the row like the e-mail column of payments in h.skauting. *}
+                <div n:if="$registration->getState() !== App\Model\Registration\RegistrationState::Rejected" class="small mt-1" data-test="recipient-choices">
+                    <span n:foreach="$registration->getSelectedRecipients() as $recipient" class="me-2" data-test="recipient">{$recipient->getEmail()} <span class="text-body-secondary">({$recipient->getSource()->label()})</span></span>
+                    <span n:if="$registration->asksForContactEmail() && $registration->getContactEmail() !== null && ! in_array($registration->getContactEmail(), $registration->getSelectedRecipientEmails(), true)" class="me-2" data-test="recipient">{$registration->getContactEmail()} <span class="text-body-secondary">(kontaktní e-mail z přihlášky)</span></span>
+                    <details n:if="$canEdit" class="d-inline" data-test="recipients-edit">
+                        <summary class="d-inline link-primary" role="button">upravit</summary>
+                        {form 'rowRecipients-' . $registration->getId(), class => 'border rounded p-2 mt-1', data-allow-resubmit => true}
+                            {input selected}
+                            <div class="input-group input-group-sm mt-1">
+                                {input email, class => 'form-control', placeholder => 'další e-mail', aria-label => 'Další e-mail'}
+                                {input save, class => 'btn btn-primary'}
+                            </div>
+                        {/form}
+                    </details>
+                </div>
+            </div>
+            <div class="text-md-end small">
+                <span class="badge {$registration->getState()->badgeClass()}" data-test="registration-state">{$registration->getState()->label()}</span>
+                <div n:if="$registration->getRespondedAt() !== null" class="text-body-secondary">odpověď {$registration->getRespondedAt()|date:'d.m.Y H:i'}</div>
+                <div n:if="$registration->getRespondedAt() === null && $registration->getSeenAt() !== null" class="text-body-secondary">otevřeno {$registration->getSeenAt()|date:'d.m.Y H:i'}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}

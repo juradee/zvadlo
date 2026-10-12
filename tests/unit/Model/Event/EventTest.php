@@ -8,6 +8,7 @@ use App\Model\Event\Event;
 use App\Model\Event\EventInput;
 use App\Model\Event\EventState;
 use App\Model\Event\InvalidStateTransitionException;
+use App\Model\Event\PublicRegistration;
 use Codeception\Test\Unit;
 use DateTimeImmutable;
 
@@ -50,16 +51,6 @@ final class EventTest extends Unit
         $event->changeState(EventState::Open, $now);
     }
 
-    public function testEditLock(): void
-    {
-        $event = $this->event(dateFrom: '2026-11-20', editLockDays: 3);
-
-        self::assertSame('2026-11-17', $event->getEditLockDate()->format('Y-m-d'));
-        self::assertFalse($event->isEditLocked(new DateTimeImmutable('2026-11-16 23:59')));
-        self::assertTrue($event->isEditLocked(new DateTimeImmutable('2026-11-17 00:00')));
-        self::assertTrue($event->isEditLocked(new DateTimeImmutable('2026-11-25')));
-    }
-
     public function testRegistrationIsOpenOnlyInOpenStateUntilDeadline(): void
     {
         $event = $this->event(dateFrom: '2026-11-20', deadline: '2026-11-10');
@@ -86,19 +77,33 @@ final class EventTest extends Unit
         self::assertFalse($event->overlaps($this->event(dateFrom: '2026-11-23', dateTo: '2026-11-24')));
     }
 
-    private function event(string $dateFrom = '2026-11-20', ?string $dateTo = null, ?string $deadline = null, int $editLockDays = 3): Event
+    public function testOneLimitForSigningUpChangingAndCancelling(): void
+    {
+        $event = $this->event(dateFrom: '2026-11-20', dateTo: '2026-11-22');
+        $event->changeState(EventState::Open, new DateTimeImmutable('2026-10-01'));
+        $event->update(new EventInput('Výprava', '2', '2', new DateTimeImmutable('2026-11-20'), new DateTimeImmutable('2026-11-22'), null, null, null, null, null, 'Jan Novák', 'jan@example.cz', null, PublicRegistration::Open), new DateTimeImmutable('2026-10-01'));
+
+        self::assertSame('2026-11-22', $event->getLastChangeDay()->format('Y-m-d'), 'no deadline: until the end of the event');
+        self::assertTrue($event->isPublicRegistrationOpen(new DateTimeImmutable('2026-11-22 23:59')), 'the last day still counts');
+        self::assertFalse($event->isPublicRegistrationOpen(new DateTimeImmutable('2026-11-23')));
+        self::assertFalse($event->acceptsSkautisLogin(new DateTimeImmutable('2026-11-25')), 'an event in the past takes nobody');
+        self::assertNull($event->getLockNoticeDate(), 'no deadline, no notice');
+
+        $event->changeState(EventState::Closed, new DateTimeImmutable('2026-11-01'));
+        self::assertFalse($event->isRegistrationOpen(new DateTimeImmutable('2026-11-01')), 'closing the event ends it early');
+    }
+
+    private function event(string $dateFrom = '2026-11-20', ?string $dateTo = null, ?string $deadline = null): Event
     {
         $input = new EventInput(
             name: 'Výprava',
-            skautisTypeId: 'vyprava',
-            skautisScopeId: 'oddil',
-            isCamp: false,
+            skautisTypeId: '2',
+            skautisScopeId: '2',
             dateFrom: new DateTimeImmutable($dateFrom),
             dateTo: new DateTimeImmutable($dateTo ?? $dateFrom),
             place: null,
             description: null,
             registrationDeadline: $deadline === null ? null : new DateTimeImmutable($deadline),
-            editLockDays: $editLockDays,
             capacity: null,
             price: null,
             contactName: 'Jan Novák',

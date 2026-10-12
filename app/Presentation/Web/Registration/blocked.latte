@@ -1,0 +1,9 @@
+{block title}Odkaz dočasně zablokován{/block}
+
+{block content}
+{include '@event-header.latte'}
+<div class="alert alert-danger" data-test="blocked">
+    Příliš mnoho neúspěšných pokusů o ověření. Zkuste to znovu po {$registration->getBlockedUntil()|date:'H:i'}.
+</div>
+<p class="text-body-secondary">Pokud si nejste jistí datem narození uvedeným ve skautISu, ozvěte se vedoucímu: {$event->getContactName()}, {$event->getContactEmail()}.</p>
+{/block}

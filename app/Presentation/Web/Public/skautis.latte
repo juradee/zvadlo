@@ -1,0 +1,24 @@
+{block title}Přihláška – {$event->getName()}{/block}
+
+{block content}
+{include '@header.latte'}
+<div class="card">
+    <div class="card-header d-flex justify-content-between"><span>Koho přihlašujete?</span><span class="text-body-secondary small">přihlášeno přes skautIS</span></div>
+    <div class="list-group list-group-flush" data-test="skautis-candidates">
+        <div n:foreach="$candidates as $row" class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2" data-test="candidate-{$row['person']->id}">
+            <div>
+                <strong>{$row['person']->getDisplayName()}</strong>
+                <span n:if="$row['person']->birthday !== null" class="text-body-secondary small">· {$row['person']->birthday|date:'d.m.Y'}</span>
+                <span n:if="$iterator->first" class="badge text-bg-light border">váš účet</span>
+                <div n:if="$row['registration'] !== null" class="small text-body-secondary">už má přihlášku ({$row['registration']->getState()->label()})</div>
+            </div>
+            {if $row['registration'] !== null}
+                <a n:href="choose! $row['person']->id" class="btn btn-outline-primary">Otevřít přihlášku</a>
+            {else}
+                <a n:href="choose! $row['person']->id" class="btn btn-primary">Přihlásit</a>
+            {/if}
+        </div>
+    </div>
+    <div class="card-footer small text-body-secondary">Nabízíme osobu vašeho účtu a účastníky, u kterých jste ve skautISu zákonným zástupcem. Někoho jiného přihlásit nelze; napište vedoucímu: <a href="mailto:{$event->getContactEmail()}">{$event->getContactEmail()}</a>.</div>
+</div>
+{/block}

@@ -1,0 +1,79 @@
+{block title}Nastavení jednotky – {$unit->displayName}{/block}
+
+{block content}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+    <h1 class="h3 mb-0">Nastavení jednotky</h1>
+    <form method="get" class="d-flex gap-2 align-items-center" data-allow-resubmit n:if="count($units) > 1">
+        <label for="unit-select" class="form-label mb-0 small">Jednotka</label>
+        <select id="unit-select" name="jednotka" class="form-select" onchange="this.form.requestSubmit()" data-test="unit-select">
+            <option n:foreach="$units as $u" value="{$u->id}" n:attr="selected: $u->id === $unit->id">{$u->displayName}</option>
+        </select>
+    </form>
+</div>
+<p class="text-body-secondary">{$unit->displayName} ({$unit->registrationNumber})</p>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header">Odesílací Gmail účty</div>
+            <ul class="list-group list-group-flush" data-test="mail-accounts">
+                <li n:foreach="$accounts as $account" class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                    <span>{$account->getEmail()} <span class="small text-body-secondary">propojeno {$account->getUpdatedAt()|date:'d.m.Y'}</span></span>
+                    {form 'removeAccount-' . $account->getId(), data-allow-resubmit => true}{input remove}{/form}
+                </li>
+                <li n:if="$accounts === []" class="list-group-item text-body-secondary">Zatím žádný účet. E-maily akcí odcházejí z Gmail účtu jednotky, bez něj nelze akci otevřít.</li>
+            </ul>
+            <div class="card-body border-top">
+                {if $googleConfigured}
+                    <a n:href=":Google:oauth jednotka => $unit->id" class="btn btn-outline-primary" data-test="connect-google">Propojit Gmail účet</a>
+                    <div class="form-text">Přesměrujeme vás na Google; Zvadlo dostane právo odesílat e-maily z vybraného účtu a zná jeho adresu, nic víc.</div>
+                {else}
+                    <div class="alert alert-warning mb-0" data-test="google-not-configured">Propojení s Googlem není v tomto prostředí nastavené (chybí soubor s přihlašovacími údaji aplikace).</div>
+                {/if}
+            </div>
+        </div>
+        <div class="card mb-3">
+            <div class="card-header">Přihláška a akce</div>
+            <div class="card-body">{control settingsForm}</div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        <div class="card">
+            <div class="card-header">Výchozí texty e-mailů</div>
+            <div class="card-body">
+                <p class="small text-body-secondary">Texty se zkopírují do každé nově založené akce, kde je lze dál upravit. Zamítnutí přihlášky platí ze zdejšího textu pro všechny akce. Symboly ve tvaru <code>%nazev%</code> se nahradí hodnotami:</p>
+                <ul class="small text-body-secondary row row-cols-1 row-cols-md-2 list-unstyled" data-test="symbols">
+                    <li n:foreach="$symbols as $symbol => $meaning" class="col"><code>%{$symbol}%</code> – {$meaning}</li>
+                </ul>
+                <form n:name="templateForm" data-test="template-form">
+                    <div class="accordion" id="templates">
+                        <div n:foreach="$templates as $key => $item" class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#template-{$key}">
+                                    {$item['type']->label()}
+                                    <span n:if="$item['custom']" class="badge text-bg-light border ms-2">vlastní text</span>
+                                </button>
+                            </h2>
+                            <div id="template-{$key}" class="accordion-collapse collapse" data-bs-parent="#templates">
+                                <div class="accordion-body">
+                                    <p class="small text-body-secondary">{$item['type']->description()}</p>
+                                    <div class="mb-3">
+                                        <label n:name="$form[$key]['subject']" class="form-label">{$form[$key]['subject']->getCaption()}</label>
+                                        <input n:name="$form[$key]['subject']" class="form-control">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label n:name="$form[$key]['body']" class="form-label">{$form[$key]['body']->getCaption()}</label>
+                                        <textarea n:name="$form[$key]['body']" class="form-control font-monospace"></textarea>
+                                    </div>
+                                    <button n:if="$item['custom']" n:name="'reset_' . $key" class="btn btn-sm btn-outline-secondary" data-test="reset-template-{$key}">Obnovit výchozí text</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3"><button n:name="save" class="btn btn-primary">Uložit výchozí texty</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}

@@ -1,0 +1,15 @@
+{block title}Ověření – {$event->getName()}{/block}
+
+{block content}
+{include '@event-header.latte'}
+<div class="card">
+    <div class="card-body">
+        {if $verificationMethod === App\Model\Registration\VerificationMethod::Email}
+            <p>Přihláška je určená pro <strong data-test="participant-name">{$registration->getDisplayName()}</strong>. Pro otevření zadejte e-mail, na který pozvánka přišla.</p>
+        {else}
+            <p>Pro otevření přihlášky pro <strong data-test="participant-name">{$registration->getDisplayName()}</strong> zadejte datum narození účastníka.</p>
+        {/if}
+        {control verifyForm}
+    </div>
+</div>
+{/block}

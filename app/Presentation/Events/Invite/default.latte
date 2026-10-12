@@ -1,0 +1,81 @@
+{block title}Pozvat – {$event->getName()}{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1">
+    <a n:href=":Events:Overview:default" class="link-secondary">Akce</a> · <a n:href=":Events:Event:default $event->getId()" class="link-secondary">{$event->getName()}</a>
+</div>
+<h1 class="h3 mb-3">Přidat účastníky</h1>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-8">
+        <form method="get" class="row g-2 align-items-end mb-3" data-allow-resubmit>
+            <div class="col-12 col-md-5">
+                <label for="filter-search" class="form-label small mb-1">Hledat</label>
+                <input id="filter-search" type="search" name="hledat" value="{$search}" class="form-control" placeholder="jméno nebo přezdívka">
+            </div>
+            <div class="col-8 col-md-5">
+                <label for="filter-unit" class="form-label small mb-1">Jednotka</label>
+                <select id="filter-unit" name="jednotka" class="form-select" onchange="this.form.requestSubmit()">
+                    <option value="">všechny</option>
+                    <option n:foreach="$units as $unit" value="{$unit->id}" n:attr="selected: $unit->id === $unitFilter">{$unit->displayName}</option>
+                </select>
+            </div>
+            <div class="col-4 col-md-2 d-grid">
+                <button class="btn btn-outline-secondary">Filtrovat</button>
+            </div>
+        </form>
+
+        <form n:name="inviteForm" data-test="invite-form">
+            <div class="d-flex justify-content-between align-items-center mb-2 small text-body-secondary">
+                <span>Zobrazeno {count($members)} z {$totalMembers} členů · <a n:href="default $event->getId(), obnovit => true" class="link-secondary">obnovit ze skautISu</a></span>
+                <button n:name="invite" class="btn btn-primary btn-sm" data-test="invite-submit">Přidat vybrané</button>
+            </div>
+            <div n:if="$form['members']->hasErrors()" class="alert alert-danger">{$form['members']->getError()}</div>
+            <div n:if="$addressPersonIds !== []" class="d-flex flex-wrap align-items-center column-gap-3 row-gap-1 mb-2 small" data-test="address-types">
+                <span class="text-body-secondary w-100">Pozvánka a další zprávy všem na:</span>
+                <label n:foreach="$addressTypes as $type" class="d-inline-flex align-items-center gap-1">
+                    <input type="checkbox" class="form-check-input m-0" data-address-type-toggle="{$type->value}" data-test="address-type-{$type->value}">
+                    {$type->label()}
+                </label>
+            </div>
+            <div n:if="$addressPersonIds !== []" class="alert alert-info py-2 small" data-address-loader="{link addresses!}" data-person-ids="{implode(',', $addressPersonIds)}" data-test="address-loader">
+                <span data-progress-label>Načítám e-maily ze skautISu…</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle" id="member-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" class="form-check-input" data-check-all="#member-table input[name='members[]']" aria-label="Vybrat vše"></th>
+                            <th>Jméno</th>
+                            <th class="d-none d-md-table-cell">Jednotka</th>
+                            <th>Věk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr n:foreach="$members as $person" data-test="member-row">
+                            <td>{input members:$person->id, class => 'form-check-input'}</td>
+                            <td>
+                                {label members:$person->id /}
+                                <span n:if="isset($invited[$person->id])" class="badge text-bg-secondary ms-1">pozván</span>
+                                {* Filled by the page: the e-mails of the member, with the default choice ticked. *}
+                                <div n:if="! isset($invited[$person->id])" class="small mt-1" data-addresses="{$person->id}" data-test="member-addresses"><span class="text-body-secondary">načítám e-maily…</span></div>
+                            </td>
+                            <td class="d-none d-md-table-cell small text-body-secondary">{$units[$person->unitId]->displayName ?? $person->unitId}</td>
+                            <td class="small text-body-secondary">{$person->getAge($now) ?? '–'}</td>
+                        </tr>
+                        <tr n:if="$members === []"><td colspan="4" class="text-body-secondary">Nikdo neodpovídá filtru.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="card">
+            <div class="card-header">Nečlen (výjimečně, jinak veřejný odkaz)</div>
+            <div class="card-body" data-test="non-member-form">
+                {control nonMemberForm}
+            </div>
+        </div>
+    </div>
+</div>
+{/block}

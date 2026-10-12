@@ -8,13 +8,17 @@
         <p class="mb-0">
             <span class="badge {$event->getState()->badgeClass()}" data-test="event-state">{$event->getState()->label()}</span>
             <span n:if="$event->isCamp()" class="badge text-bg-info">tábor</span>
-            <span class="ms-2">{$event->getDateFrom()|date:'j. n. Y'}{if $event->getDateTo() != $event->getDateFrom()} – {$event->getDateTo()|date:'j. n. Y'}{/if}</span>
+            <span class="ms-2">{$event->getDateFrom()|date:'d.m.Y'}{if $event->getDateTo() != $event->getDateFrom()} – {$event->getDateTo()|date:'d.m.Y'}{/if}</span>
             <span n:if="$event->getPlace() !== null" class="ms-2">· {$event->getPlace()}</span>
         </p>
     </div>
-    <div n:if="$canEdit" class="d-flex flex-wrap gap-2">
-        <a n:href="edit $event->getId()" class="btn btn-outline-primary" data-test="edit-event">Upravit</a>
-        <a n:href=":Events:Field:default $event->getId()" class="btn btn-outline-primary" data-test="edit-fields">Vlastní pole ({count($event->getVisibleFields())})</a>
+    <div class="d-flex flex-wrap gap-2">
+        <a n:href=":Events:Registration:default $event->getId()" class="btn btn-primary" data-test="registrations-link">Přihlášky ({$total})</a>
+        <a n:if="$canEdit" n:href="edit $event->getId()" class="btn btn-outline-primary" data-test="edit-event">Upravit</a>
+        <a n:if="$canEdit" n:href=":Events:Field:default $event->getId()" class="btn btn-outline-primary" data-test="edit-fields">Vlastní pole ({count($event->getVisibleFields())})</a>
+        <a n:if="$canEdit" n:href=":Events:Email:default $event->getId()" class="btn btn-outline-primary" data-test="edit-emails">E-maily</a>
+        <a n:if="$canEdit" n:href=":Events:Web:default $event->getId()" class="btn btn-outline-primary" data-test="edit-web">Miniweb</a>
+        <a n:if="$canEdit" n:href=":Events:Sync:default $event->getId()" class="btn btn-outline-primary" data-test="sync-link">skautIS</a>
     </div>
 </div>
 
@@ -25,13 +29,33 @@
             <div class="card-body">
                 <dl class="row mb-0">
                     <dt class="col-sm-4">Typ a rozsah</dt><dd class="col-sm-8">{$typeName}, {$scopeName}</dd>
-                    <dt class="col-sm-4">Uzávěrka přihlášek</dt><dd class="col-sm-8">{if $event->getRegistrationDeadline() !== null}{$event->getRegistrationDeadline()|date:'j. n. Y'}{else}do začátku akce{/if}</dd>
-                    <dt class="col-sm-4">Zámek úprav</dt><dd class="col-sm-8">{$event->getEditLockDays()} dní před akcí, tj. od {$event->getEditLockDate()|date:'j. n. Y'}{if $editLocked} <span class="badge text-bg-warning">úpravy účastníků jsou zamčené</span>{/if}</dd>
-                    <dt class="col-sm-4">Kapacita</dt><dd class="col-sm-8">{$event->getCapacity() ?? 'bez omezení'}</dd>
+                    <dt class="col-sm-4">Uzávěrka přihlášek</dt><dd class="col-sm-8" data-test="deadline">{if $event->getRegistrationDeadline() !== null}{$event->getRegistrationDeadline()|date:'d.m.Y'}{else}do konce akce ({$event->getDateTo()|date:'d.m.Y'}){/if} <span class="text-body-secondary small">podání, změny i zrušení</span>{if $event->getState() === App\Model\Event\EventState::Open && ! $registrationOpen} <span class="badge text-bg-warning">uzávěrka už proběhla</span>{/if}</dd>
+                    <dt class="col-sm-4">Kapacita</dt><dd class="col-sm-8" data-test="capacity">{if $event->getCapacity() !== null}{$event->getCapacity()}{if $event->isWaitlistEnabled()}, s čekací listinou{else}, bez čekací listiny{/if}{else}bez omezení{/if}</dd>
                     <dt class="col-sm-4">Cena</dt><dd class="col-sm-8">{if $event->getPrice() !== null}{$event->getPrice()} Kč{else}neuvedena{/if}</dd>
                     <dt class="col-sm-4">Kontakt</dt><dd class="col-sm-8">{$event->getContactName()}, {$event->getContactEmail()}{if $event->getContactPhone() !== null}, {$event->getContactPhone()}{/if}</dd>
+                    <dt class="col-sm-4">Veřejné přihlašování</dt><dd class="col-sm-8">{$event->getPublicRegistration()->label()}</dd>
+                    <dt class="col-sm-4">Odesílací účet</dt><dd class="col-sm-8" data-test="mail-account">{if $event->getMailAccount() !== null}{$event->getMailAccount()->getEmail()}{elseif $accountRequired}<span class="text-danger">není vybraný, akci nelze otevřít</span>{else}není vybraný (v tomto prostředí jde pošta do Mailpitu){/if}</dd>
                     <dt class="col-sm-4">Adresa akce</dt><dd class="col-sm-8"><code>/{$event->getUnitId()}/{$event->getSlug()}</code></dd>
+                    <dt n:if="! $event->isCamp()" class="col-sm-4">Akce ve skautISu</dt><dd n:if="! $event->isCamp()" class="col-sm-8" data-test="skautis-event">{if $skautisUrl !== null}<a href="{$skautisUrl}" target="_blank" rel="noopener">ID {$event->getSkautisEventId()}</a>{else}zatím nepropsaná{/if}</dd>
+                    <dt n:if="$event->isCamp()" class="col-sm-4">Tábor ve skautISu</dt><dd n:if="$event->isCamp()" class="col-sm-8">ID {$event->getSkautisCampId()}{if $canEdit} {form campRefreshForm, class => 'd-inline'}{input refresh}{/form}{/if}</dd>
                 </dl>
+            </div>
+        </div>
+        <div n:if="$publicLink !== null" class="card mb-3" data-test="public-link-box">
+            <div class="card-header">Veřejný odkaz na přihlášku</div>
+            <div class="card-body">
+                <div class="input-group">
+                    <input type="text" class="form-control font-monospace" readonly value="{$publicLink}" id="public-link" data-test="public-link">
+                    <button type="button" class="btn btn-outline-secondary" data-copy="#public-link">Kopírovat</button>
+                </div>
+                <div class="form-text">Kdokoli s tímto odkazem se přihlásí bez pozvánky. Členové jednotky se spárují podle jména a data narození.</div>
+                <div n:if="$event->getState() !== App\Model\Event\EventState::Open" class="form-text text-warning-emphasis" data-test="public-link-inactive">Odkaz začne fungovat, až akci otevřete pro přihlašování; do té doby zobrazuje, že přihlašování ještě nezačalo.</div>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2 small" data-test="fingerprints">
+                    <span n:class="$fingerprintCount === 0 ? 'text-danger' : 'text-body-secondary'">
+                        {if $fingerprintCount === 0}Členové pro párování nejsou načtení, přihlášky z veřejného odkazu se zatím nespárují.{else}Párování zná {$fingerprintCount} členů jednotky, načteno {$fingerprintsRefreshedAt|date:'d.m.Y H:i'}.{/if}
+                    </span>
+                    {if $canEdit}{form fingerprintForm, class => 'd-inline', data-allow-resubmit => true}{input refresh}{/form}{/if}
+                </div>
             </div>
         </div>
         <div n:if="$event->getDescription() !== null" class="card">
@@ -40,6 +64,18 @@
         </div>
     </div>
     <div class="col-12 col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Přihlášky</span>
+                <a n:if="$canEdit && $event->getState() !== App\Model\Event\EventState::Archived" n:href=":Events:Invite:default $event->getId()" class="small" data-test="invite-link">Pozvat</a>
+            </div>
+            <ul class="list-group list-group-flush" data-test="registration-counts">
+                <li n:foreach="$registrationStates as $registrationState" class="list-group-item d-flex justify-content-between">
+                    <span>{$registrationState->label()}</span>
+                    <a n:href=":Events:Registration:default $event->getId(), stav => $registrationState->value" class="badge {$registrationState->badgeClass()} text-decoration-none">{$counts[$registrationState->value]}</a>
+                </li>
+            </ul>
+        </div>
         <div n:if="$canEdit" class="card mb-3">
             <div class="card-header">Stav akce</div>
             <div class="card-body d-grid gap-2" data-test="state-form">

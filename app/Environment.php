@@ -108,14 +108,22 @@ final class Environment
                 'repository' => self::nullableString('GITHUB_ISSUES_REPOSITORY'),
                 'labels' => self::list('GITHUB_ISSUES_LABELS'),
             ],
-            'apiTokens' => [
-                'hskauting' => self::nullableString('API_TOKEN_HSKAUTING'),
+            'hskauting' => [
+                'webhookUrl' => self::nullableString('HSKAUTING_WEBHOOK_URL'),
+                'webhookSecret' => self::nullableString('HSKAUTING_WEBHOOK_SECRET'),
             ],
             'retentionMonths' => [
                 'synced' => self::int('RETENTION_MONTHS_SYNCED', 12),
                 'unsynced' => self::int('RETENTION_MONTHS_UNSYNCED', 24),
             ],
             'sentryDsn' => self::nullableString('SENTRY_DSN'),
+            'maintenance' => [
+                'enabled' => self::bool('MAINTENANCE_MODE', false),
+                'allowedIps' => self::list('MAINTENANCE_ALLOWED_IPS'),
+                'startedAt' => self::nullableString('MAINTENANCE_STARTED_AT'),
+                'endsAt' => self::nullableString('MAINTENANCE_ENDS_AT'),
+            ],
+            'adminUserIds' => array_map(intval(...), array_filter(self::list('ADMIN_USER_IDS'), is_numeric(...))),
         ];
     }
 

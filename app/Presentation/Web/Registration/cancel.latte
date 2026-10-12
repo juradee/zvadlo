@@ -1,0 +1,14 @@
+{block title}Zrušení účasti – {$event->getName()}{/block}
+
+{block content}
+{include '@event-header.latte'}
+<div class="card">
+    <div class="card-body">
+        <p>Opravdu zrušit účast účastníka <strong data-test="participant-name">{$registration->getDisplayName()}</strong> na akci {$event->getName()}?</p>
+        <div class="d-flex gap-2">
+            {control cancelForm}
+            <a n:href="summary" class="btn btn-outline-secondary">Zpět</a>
+        </div>
+    </div>
+</div>
+{/block}

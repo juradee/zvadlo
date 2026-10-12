@@ -69,14 +69,14 @@ class EventField
         $this->help = $help;
         $this->required = $required;
 
-        if (! $this->type->hasOptions()) {
-            $this->options->clear();
-
+        $options = $this->type->hasOptions() ? array_values($options) : [];
+        if ($this->getOptionLabels() === $options) {
             return;
         }
 
+        // Options are rebuilt only when they differ, so answers keep pointing at unchanged options.
         $this->options->clear();
-        foreach (array_values($options) as $position => $optionLabel) {
+        foreach ($options as $position => $optionLabel) {
             $this->options->add(new EventFieldOption($this, $optionLabel, $position));
         }
     }

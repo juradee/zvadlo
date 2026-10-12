@@ -1,0 +1,44 @@
+{block title}E-maily – {$event->getName()}{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1">
+    <a n:href=":Events:Overview:default" class="link-secondary">Akce</a> · <a n:href=":Events:Event:default $event->getId()" class="link-secondary">{$event->getName()}</a>
+</div>
+<h1 class="h3 mb-3">E-maily akce</h1>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-4">
+        <div class="list-group mb-3" data-test="email-types">
+            <a n:foreach="$emails as $email" n:href="default $event->getId(), typ => $email->getType()->value" n:class="list-group-item, list-group-item-action, $email === $edited ? active" data-test="email-type-{$email->getType()->value}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>{$email->getType()->label()}</span>
+                    <span n:if="! $email->isEnabled()" class="badge text-bg-secondary">vypnuto</span>
+                </div>
+                <div class="small opacity-75">{$email->getSubject()}</div>
+            </a>
+        </div>
+        <div class="card">
+            <div class="card-header">Symboly</div>
+            <ul class="list-group list-group-flush small" data-test="symbols">
+                <li n:foreach="$symbols as $symbol => $meaning" class="list-group-item py-1"><code>%{$symbol}%</code> – {$meaning}</li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-12 col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header">{$edited->getType()->label()}</div>
+            <div class="card-body">
+                <p class="small text-body-secondary">{$edited->getType()->description()}</p>
+                {control emailForm}
+            </div>
+        </div>
+        <div class="card" data-test="email-preview">
+            <div class="card-header">Náhled s ukázkovými hodnotami</div>
+            <div class="card-body">
+                <p class="fw-semibold mb-2">{$preview->subject}</p>
+                <div class="border rounded p-3 bg-body-tertiary">{$preview->html|noescape}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}

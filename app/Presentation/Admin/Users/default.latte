@@ -1,0 +1,40 @@
+{block title}Uživatelé – administrace{/block}
+
+{block content}
+<div class="small text-body-secondary mb-1"><a n:href=":Admin:Dashboard:default" class="link-secondary">Administrace</a></div>
+<h1 class="h3 mb-3">Uživatelé se systémovou rolí</h1>
+<p class="text-body-secondary">Oprávnění více rolí se sčítají. <code>admin</code> vidí celou administraci, <code>support</code> jen hlášení chyb.</p>
+<div n:if="$configuredAdminIds !== []" class="alert alert-info" data-test="admin-users-config">Konfigurace (<code>ADMIN_USER_IDS</code>) navíc přiděluje roli admin uživatelům: <strong>{implode(', ', $configuredAdminIds)}</strong>.</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-7">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0" data-test="admin-users-list">
+                    <thead><tr><th>skautIS ID</th><th>Role</th><th></th></tr></thead>
+                    <tbody>
+                        <tr n:foreach="$users as $account" data-test="admin-user-row">
+                            <td><code>{$account['userId']}</code></td>
+                            <td>{$account['roles']}</td>
+                            <td class="text-end d-flex gap-1 justify-content-end">
+                                <a n:href="default upravit => $account['userId']" class="btn btn-sm btn-outline-primary">Upravit</a>
+                                {form 'removeUser-' . $account['userId'], data-allow-resubmit => true}{input remove}{/form}
+                            </td>
+                        </tr>
+                        <tr n:if="$users === []"><td colspan="3" class="text-body-secondary">Zatím nikdo.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5">
+        <div class="card">
+            <div class="card-header">{$editedUserId === null ? 'Přidat uživatele' : 'Upravit role uživatele ' . $editedUserId}</div>
+            <div class="card-body" data-test="admin-users-form">
+                {control userRolesForm}
+                <a n:if="$editedUserId !== null" n:href="default" class="btn btn-link px-0">Zrušit úpravu</a>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}

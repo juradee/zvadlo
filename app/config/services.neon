@@ -5,13 +5,68 @@ services:
 
     - App\Model\Skautis\SoapSkautisGateway
     - App\Model\Skautis\EventCodeLists
+    - App\Model\Skautis\SkautisLinks
+    - App\Model\Skautis\MemberDirectory
     - App\Model\Event\EventRepository
     - App\Model\Event\SlugGenerator
     - App\Model\Event\EventService
+    - App\Model\Security\Crypto(%appSecret%)
+    - App\Model\Security\Fingerprint(%appSecret%)
+    - App\Model\Registration\RegistrationRepository
+    - App\Model\Registration\MemberAddresses
+    - App\Model\Registration\RegistrationService
+    - App\Model\Registration\MemberFingerprints
+    - App\Model\Registration\PublicRegistrationService
+    - App\Model\Registration\VerificationSession
+    - App\Model\Unit\UnitSettingsRepository
+    - App\Model\Web\FileStorage(%uploadDir%)
+    - App\Model\Web\EventContentRepository
+    - App\Model\Web\WebService
+    - App\Model\Sync\SkautisSync
+    - App\Model\Hskauting\HskautingNotifier(webhookUrl: %hskauting.webhookUrl%, secret: %hskauting.webhookSecret%)
+    - App\Model\Hskauting\HskautingPushCommand
+    - App\Model\Admin\SystemUserRoleRepository
+    - App\Model\Admin\AdminAccess(configuredAdminIds: %adminUserIds%)
+    - App\Model\Admin\Statistics
+    - App\Model\BugReport\TechnicalErrorReportRepository
+    - App\Model\BugReport\ScreenshotStorage(%uploadDir%)
+    - App\Model\BugReport\BugReportMailer(adminEmails: %errorEmails%, systemEmail: %systemEmail%, appBaseUrl: %appBaseUrl%)
+    - GuzzleHttp\Client
+    - App\Model\BugReport\GitHubIssueClient(config: %github%)
+    - App\Model\BugReport\BugReportService(appRelease: %releaseHash%)
+    - App\Model\Registration\SkautisParticipantLogin
+    - App\Model\Registration\RetentionService(syncedMonths: %retentionMonths.synced%, unsyncedMonths: %retentionMonths.unsynced%)
+    - App\Model\Registration\RegistrationsAnonymizeCommand
+    - App\Model\Monitoring\LogRotation(logDir: %projectDir%/log)
+    - App\Model\Monitoring\LogsRotateCommand
+    - App\Presentation\Health\HealthPresenter(releaseHash: %releaseHash%)
+    - App\Presentation\Pwa\PwaPresenter(releaseHash: %releaseHash%, manifestPath: %projectDir%/www/assets/.vite/manifest.json, assetsDir: %projectDir%/www/assets)
+    - App\Model\Mailing\GoogleService(%google.credentialsFile%, %google.redirectUri%)
+    - App\Model\Mailing\MailerFactory(sendEmail: %sendEmail%)
+    - App\Model\Mailing\MarkdownRenderer
+    - App\Model\Mailing\TemplateRenderer
+    - App\Model\Mailing\UnitEmailTemplateRepository
+    - App\Model\Mailing\EmailTemplateProvider
+    - App\Model\Mailing\GoogleOAuthRepository
+    - App\Model\Mailing\GoogleAccounts
+    - App\Model\Mailing\EmailMessageRepository
+    - App\Model\Mailing\MailComposer(appBaseUrl: %appBaseUrl%, systemEmail: %systemEmail%)
+    - App\Model\Mailing\EventMailer
+    - App\Model\Mailing\AutomaticMails
+    - App\Model\Mailing\EditCodeService(appSecret: %appSecret%)
+    - App\Model\Mailing\LockNoticeScheduler
+    - App\Model\Mailing\SendEmailsHandler
+    - App\Model\Task\TaskRepository
+    - App\Model\Task\TaskQueue
+    - App\Model\Task\TaskRunner(handlers: typed(App\Model\Task\TaskHandler))
+    - App\Model\Task\TasksRunCommand
     - App\Model\User\UnitAccessResolver
     - App\Model\User\CurrentUser
+    - App\Model\User\CurrentUserEmail
+    - App\Model\User\UserPreferenceRepository
     - App\Model\User\LoginService
     - App\Model\Auth\Authorizator
     - App\Presentation\Accessory\Form\FormFactory
+    - App\Presentation\Web\RegistrationFormBuilder
 
-    - App\Presentation\Accessory\EnvironmentInfo(%appEnv%, %testBackground%, %environmentLabel%, %environmentColor%, %releaseHash%)
+    - App\Presentation\Accessory\EnvironmentInfo(%appEnv%, %testBackground%, %environmentLabel%, %environmentColor%, %releaseHash%, %maintenance.enabled%)

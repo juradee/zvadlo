@@ -1,0 +1,180 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Presentation\Unit\Settings;
+
+use App\Model\Mailing\EmailTemplate;
+use App\Model\Mailing\EmailType;
+use App\Model\Mailing\GoogleAccounts;
+use App\Model\Mailing\GoogleOAuth;
+use App\Model\Mailing\GoogleOAuthRepository;
+use App\Model\Mailing\TemplateRenderer;
+use App\Model\Mailing\UnitEmailTemplateRepository;
+use App\Model\Unit\UnitSettingsRepository;
+use App\Presentation\Accessory\Form\FormFactory;
+use App\Presentation\SecuredPresenter;
+use LogicException;
+use Nette\Application\UI\Form;
+use Nette\Application\UI\Multiplier;
+
+/**
+ * What a unit sets once: Gmail accounts, default e-mail texts, the agreement text and the default lock.
+ */
+final class SettingsPresenter extends SecuredPresenter
+{
+    private ?int $unitId = null;
+
+    public function __construct(
+        private readonly UnitSettingsRepository $settings,
+        private readonly UnitEmailTemplateRepository $templates,
+        private readonly GoogleOAuthRepository $accounts,
+        private readonly GoogleAccounts $google,
+        private readonly FormFactory $forms,
+    ) {
+        parent::__construct();
+    }
+
+    public function actionDefault(?int $jednotka = null): void
+    {
+        $access = $this->currentUser->getAccess();
+        if ($access->edit === []) {
+            $this->error('Vaše role neumožňuje spravovat nastavení jednotky. Zkuste přepnout roli.', 403);
+        }
+
+        $unitId = $jednotka ?? $this->currentUser->getRole()->unitId;
+        if (! $access->canEdit($unitId)) {
+            $unitId = (int) array_key_first($access->edit);
+        }
+        $this->unitId = $unitId;
+    }
+
+    public function renderDefault(): void
+    {
+        $unitId = $this->requireUnitId();
+        $access = $this->currentUser->getAccess();
+        $own = $this->templates->findByUnit($unitId);
+
+        $templates = [];
+        foreach (EmailType::unitTemplates() as $type) {
+            $templates[$type->value] = ['type' => $type, 'custom' => isset($own[$type->value])];
+        }
+
+        $this->template->unit = $access->edit[$unitId];
+        $this->template->units = $access->edit;
+        $this->template->settings = $this->settings->get($unitId);
+        $this->template->accounts = $this->accounts->findByUnits([$unitId]);
+        $this->template->googleConfigured = $this->google->isConfigured();
+        $this->template->templates = $templates;
+        $this->template->symbols = TemplateRenderer::SYMBOLS;
+    }
+
+    protected function createComponentSettingsForm(): Form
+    {
+        $unitId = $this->requireUnitId();
+        $settings = $this->settings->get($unitId);
+        $accounts = [];
+        foreach ($this->accounts->findByUnits([$unitId]) as $account) {
+            $accounts[$account->getId()] = $account->getEmail();
+        }
+
+        $form = $this->forms->create();
+        $form->addTextArea('agreementText', 'Text souhlasu v přihlášce', null, 3)
+            ->setNullable()
+            ->setOption('description', 'Zaškrtávátko na konci přihlášky. Prázdné = výchozí text.');
+        $form->addSelect('defaultMailAccount', 'Výchozí odesílací účet nových akcí', $accounts)
+            ->setPrompt($accounts === [] ? 'Žádný účet není propojený' : 'Vyberte');
+        $form->addSubmit('save', 'Uložit nastavení');
+        $form->setDefaults([
+            'agreementText' => $settings->getAgreementText() === $settings::DEFAULT_AGREEMENT ? null : $settings->getAgreementText(),
+            'defaultMailAccount' => $settings->getDefaultMailAccount()?->getId(),
+        ]);
+
+        $form->onSuccess[] = function (Form $form, array $values): void {
+            $settings = $this->settings->get($this->requireUnitId());
+            $account = $values['defaultMailAccount'] === null ? null : $this->accounts->find((string) $values['defaultMailAccount']);
+            $settings->edit(
+                $values['agreementText'] === null ? null : (string) $values['agreementText'],
+                $account,
+            );
+            $this->settings->save($settings);
+            $this->flashMessage('Nastavení jednotky bylo uloženo.', 'success');
+            $this->redirect('this');
+        };
+
+        return $form;
+    }
+
+    protected function createComponentTemplateForm(): Form
+    {
+        $unitId = $this->requireUnitId();
+        $own = $this->templates->findByUnit($unitId);
+
+        $form = $this->forms->create();
+        foreach (EmailType::unitTemplates() as $type) {
+            $current = $own[$type->value] ?? null;
+            $default = EmailTemplate::default($type);
+            $container = $form->addContainer($type->value);
+            $container->addText('subject', 'Předmět')
+                ->setRequired('Zadejte předmět.')
+                ->addRule($form::MaxLength, 'Předmět může mít nejvýše %d znaků.', 255)
+                ->setDefaultValue($current?->getSubject() ?? $default->subject);
+            $container->addTextArea('body', 'Text', null, 8)
+                ->setRequired('Zadejte text.')
+                ->setDefaultValue($current?->getBody() ?? $default->body);
+        }
+        $form->addSubmit('save', 'Uložit výchozí texty');
+        foreach (EmailType::unitTemplates() as $type) {
+            $form->addSubmit('reset_'.$type->value, 'Obnovit výchozí text')
+                ->setValidationScope([])
+                ->setHtmlAttribute('data-confirm', 'Vrátit text e-mailu „'.$type->label().'“ do výchozího stavu? Neuložené změny ostatních textů se zahodí.')
+                ->onClick[] = function () use ($type): void {
+                    $this->templates->reset($this->requireUnitId(), $type);
+                    $this->flashMessage(\sprintf('Text e-mailu „%s“ je zase výchozí.', $type->label()), 'success');
+                    $this->redirect('this');
+                };
+        }
+
+        // A reset button redirects in its own handler, so only the save button gets here.
+        $form->onSuccess[] = function (Form $form, array $values): void {
+            $unitId = $this->requireUnitId();
+            foreach (EmailType::unitTemplates() as $type) {
+                $container = $values[$type->value];
+                \assert(\is_array($container));
+                $this->templates->save($unitId, $type, (string) $container['subject'], (string) $container['body']);
+            }
+            $this->flashMessage('Výchozí texty e-mailů byly uloženy. Použijí se u nově zakládaných akcí; zamítnutí platí hned.', 'success');
+            $this->redirect('this');
+        };
+
+        return $form;
+    }
+
+    /**
+     * @return Multiplier<Form>
+     */
+    protected function createComponentRemoveAccount(): Multiplier
+    {
+        return new Multiplier(function (string $accountId): Form {
+            $form = $this->forms->create();
+            $form->addSubmit('remove', 'Odebrat')
+                ->setOption('class', 'btn btn-sm btn-outline-danger')
+                ->setHtmlAttribute('data-confirm', 'Odebrat účet? Akce, které z něj posílají, budou potřebovat jiný účet.');
+            $form->onSuccess[] = function () use ($accountId): void {
+                $account = $this->accounts->find($accountId);
+                if ($account instanceof GoogleOAuth && $account->getUnitId() === $this->requireUnitId()) {
+                    $this->google->remove($account);
+                    $this->flashMessage('Účet byl odebrán.', 'success');
+                }
+                $this->redirect('this');
+            };
+
+            return $form;
+        });
+    }
+
+    private function requireUnitId(): int
+    {
+        return $this->unitId ?? throw new LogicException('The unit is resolved in the action.');
+    }
+}

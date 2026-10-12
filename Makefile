@@ -25,7 +25,7 @@ RUN_PHP      = $(COMPOSE) run --rm -T $(DOCKER_USER) --no-deps php
 RUN_PHP_TEST = $(COMPOSE) run --rm -T $(DOCKER_USER) php-test
 RUN_NODE     = $(COMPOSE) run --rm -T $(DOCKER_USER) node
 
-APP_SERVICES  = traefik php nginx mariadb mailpit adminer
+APP_SERVICES  = traefik php scheduler nginx mariadb mailpit adminer
 TEST_SERVICES = mariadb-test mailpit php-test
 ACCEPTANCE_SERVICES = traefik mariadb-test mailpit selenium nginx php-test
 
@@ -39,9 +39,9 @@ define wait_for_selenium
 endef
 
 .PHONY: help build up down restart ps logs enter clean-cache composer-install composer-update init \
-        migrate migration fixtures console assets assets-watch npm-install \
-        test-unit test-integration test-acceptance ci-acceptance test-packages test-mapping test-database \
-        check-cs check-cs-check check-phpstan check-latte fix ci
+        migrate migration fixtures db-reset console assets assets-watch npm-install \
+        test-unit test-integration test-acceptance ci-acceptance test-mapping test-database \
+        check-cs check-cs-check check-phpstan check-latte check-types audit fix ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' Makefile | awk -F ':[^#]*## ' '{printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -67,8 +67,8 @@ logs: ## Follow logs
 enter: ## Shell in the PHP container
 	$(COMPOSE) exec php bash
 
-clean-cache: ## Remove the compiled DI container, Latte templates and other caches
-	$(RUN_PHP) sh -c "rm -rf temp/cache temp/phpstan temp/sessions/*"
+clean-cache: ## Remove every cache in temp/ (DI container, Latte, skautIS code lists, PHPStan, tests) and the sessions
+	$(RUN_PHP) sh -c "find temp -mindepth 1 -maxdepth 1 ! -name .gitkeep ! -name sessions -exec rm -rf {} + && rm -rf temp/sessions/*"
 
 composer-install: ## composer install
 	$(RUN_PHP) composer install --no-interaction --prefer-dist
@@ -85,14 +85,14 @@ assets: ## Build frontend assets
 assets-watch: ## Rebuild assets on change
 	$(COMPOSE) run --rm $(DOCKER_USER) node npm run watch
 
-init: ## First-time setup: build, dependencies, database, assets
+init: ## Setup from scratch: build, caches cleared, dependencies, assets, database reset (all data lost)
 	$(MAKE) build
+	$(MAKE) clean-cache
 	$(MAKE) up
 	$(MAKE) composer-install
 	$(MAKE) npm-install
 	$(MAKE) assets
-	$(MAKE) migrate
-	$(MAKE) fixtures
+	$(MAKE) db-reset
 	@echo "Application: http://$$(grep '^DEV_HOST=' docker/.env | cut -d= -f2)  Mail: http://mail.localhost  Adminer: http://adminer.localhost"
 
 console: ## Run a console command: make console c="migrations:status"
@@ -104,8 +104,13 @@ migrate: ## Run database migrations
 migration: ## Generate a migration from entity changes
 	$(RUN_PHP) bin/console migrations:diff --no-interaction
 
-fixtures: ## Load development fixtures
-	$(RUN_PHP) bin/console doctrine:fixtures:load --no-interaction
+fixtures: ## Load development fixtures (replaces existing data)
+	$(RUN_PHP) bin/console doctrine:fixtures:load --no-interaction --purge=delete
+
+db-reset: ## Drop every table of the dev database, migrate from scratch and load fixtures (all data lost)
+	$(RUN_PHP) bin/console app:database:drop --force
+	$(MAKE) migrate
+	$(MAKE) fixtures
 
 test-unit: ## Unit tests (TEST=tests/unit/Foo/BarTest.php)
 	$(RUN_PHP_TEST) vendor/bin/codecept run unit $(TEST)
@@ -127,9 +132,6 @@ ci-acceptance: ## Acceptance tests headless (CI)
 	$(MAKE) test-database
 	$(RUN_PHP_TEST) vendor/bin/codecept run acceptance --env ci -vv $(TEST); status=$$?; $(COMPOSE) stop selenium; exit $$status
 
-test-packages: ## Tests of the internal packages
-	$(RUN_PHP) vendor/bin/phpunit -c packages/skautis-nette/phpunit.xml.dist
-
 test-mapping: ## Entity mapping must match the migrations (migrations:diff must find no changes)
 	$(COMPOSE) up -d $(TEST_SERVICES)
 	$(MAKE) test-database
@@ -150,13 +152,21 @@ check-phpstan: ## PHPStan (generates Codeception actors first)
 check-latte: ## Latte lint
 	$(RUN_PHP) bin/latte-lint
 
-fix: check-cs check-latte check-phpstan ## Fixable checks
+check-types: ## TypeScript type check (frontend and service worker)
+	$(RUN_NODE) npm run check-types
+
+audit: ## Known vulnerabilities in Composer and npm dependencies
+	$(RUN_PHP) composer audit --no-interaction
+	$(RUN_NODE) npm audit --omit=dev --audit-level=high
+
+fix: check-cs check-latte check-phpstan check-types ## Fixable checks
 
 ci: ## Everything CI runs
+	$(MAKE) audit
 	$(MAKE) check-cs-check
 	$(MAKE) check-phpstan
 	$(MAKE) check-latte
-	$(MAKE) test-packages
+	$(MAKE) check-types
 	$(MAKE) test-unit
 	$(MAKE) test-integration
 	$(MAKE) test-mapping
