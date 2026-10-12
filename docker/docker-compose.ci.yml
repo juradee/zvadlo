@@ -43,5 +43,6 @@ services:
             dockerfile: docker/containers/nginx/Dockerfile.ci
         volumes: !override
             - ci-assets:/app/www/assets:ro
+            - ./containers/nginx/conf.d:/etc/nginx/conf.d:ro
         depends_on: !override
             - php-test
