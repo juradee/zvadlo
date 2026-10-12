@@ -11,11 +11,14 @@ export PHP_VERSION = $(PHP)
 export DOCKER_SOCKET ?= $(shell docker context inspect --format '{{.Endpoints.docker.Host}}' 2>/dev/null | sed -n 's|^unix://||p')
 
 COMPOSE_FILE ?= docker/docker-compose.yml
-COMPOSE = docker compose $(foreach file,$(subst :, ,$(COMPOSE_FILE)),-f $(file))
+COMPOSE_FILES = $(subst :, ,$(COMPOSE_FILE))
+COMPOSE = docker compose $(foreach file,$(COMPOSE_FILES),-f $(file))
 
-# Rootful Docker (CI) runs one-off containers as the host user so files stay writable on the host;
-# rootless Docker already maps root inside the container to the host user.
-ifeq ($(DOCKER_ROOTLESS),1)
+# Rootless Docker maps container root to the host user. Rootful local Docker needs the host UID
+# for bind mounts. The CI overlay uses named volumes seeded by its non-root image user instead.
+ifneq (,$(filter docker/docker-compose.ci.yml,$(COMPOSE_FILES)))
+DOCKER_USER =
+else ifeq ($(DOCKER_ROOTLESS),1)
 DOCKER_USER =
 else
 DOCKER_USER = --user $(shell id -u):$(shell id -g)
@@ -41,7 +44,7 @@ endef
 .PHONY: help build up down restart ps logs enter clean-cache composer-install composer-update init \
         migrate migration fixtures db-reset console assets assets-watch npm-install \
         test-unit test-integration test-acceptance ci-acceptance test-mapping test-database \
-        check-cs check-cs-check check-phpstan check-latte check-types audit fix ci
+        prepare-writable-dirs check-cs check-cs-check check-phpstan check-latte check-types audit fix ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' Makefile | awk -F ':[^#]*## ' '{printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -52,6 +55,7 @@ build: ## Build the images
 
 up: ## Start the development stack
 	$(COMPOSE) up -d $(APP_SERVICES)
+	$(MAKE) prepare-writable-dirs
 
 down: ## Stop everything
 	$(COMPOSE) down --remove-orphans
@@ -70,6 +74,9 @@ enter: ## Shell in the PHP container
 clean-cache: ## Remove every cache in temp/ (DI container, Latte, skautIS code lists, PHPStan, tests) and the sessions
 	$(RUN_PHP) sh -c "find temp -mindepth 1 -maxdepth 1 ! -name .gitkeep ! -name sessions -exec rm -rf {} + && rm -rf temp/sessions/*"
 
+prepare-writable-dirs: ## Create every directory that application, assets and tests may write to
+	$(RUN_PHP) sh -c 'mkdir -p log temp uploads www/assets tests/_output tests/_support/_generated'
+
 composer-install: ## composer install
 	$(RUN_PHP) composer install --no-interaction --prefer-dist
 
@@ -79,7 +86,7 @@ composer-update: ## composer update
 npm-install: ## npm ci
 	$(RUN_NODE) npm ci
 
-assets: ## Build frontend assets
+assets: prepare-writable-dirs ## Build frontend assets
 	$(RUN_NODE) npm run build
 
 assets-watch: ## Rebuild assets on change
@@ -112,27 +119,27 @@ db-reset: ## Drop every table of the dev database, migrate from scratch and load
 	$(MAKE) migrate
 	$(MAKE) fixtures
 
-test-unit: ## Unit tests (TEST=tests/unit/Foo/BarTest.php)
+test-unit: prepare-writable-dirs ## Unit tests (TEST=tests/unit/Foo/BarTest.php)
 	$(RUN_PHP_TEST) vendor/bin/codecept run unit $(TEST)
 
-test-integration: ## Integration tests against the test database
+test-integration: prepare-writable-dirs ## Integration tests against the test database
 	$(COMPOSE) up -d $(TEST_SERVICES)
 	$(MAKE) test-database
 	$(RUN_PHP_TEST) vendor/bin/codecept run integration $(TEST)
 
-test-acceptance: ## Acceptance tests with a visible browser at http://selenium.localhost
+test-acceptance: prepare-writable-dirs ## Acceptance tests with a visible browser at http://selenium.localhost
 	$(COMPOSE) up -d $(ACCEPTANCE_SERVICES)
 	$(call wait_for_selenium)
 	$(MAKE) test-database
 	$(RUN_PHP_TEST) vendor/bin/codecept run acceptance -vv $(TEST); status=$$?; $(COMPOSE) stop selenium; exit $$status
 
-ci-acceptance: ## Acceptance tests headless (CI)
+ci-acceptance: prepare-writable-dirs ## Acceptance tests headless (CI)
 	$(COMPOSE) up -d $(ACCEPTANCE_SERVICES)
 	$(call wait_for_selenium)
 	$(MAKE) test-database
 	$(RUN_PHP_TEST) vendor/bin/codecept run acceptance --env ci -vv $(TEST); status=$$?; $(COMPOSE) stop selenium; exit $$status
 
-test-mapping: ## Entity mapping must match the migrations (migrations:diff must find no changes)
+test-mapping: prepare-writable-dirs ## Entity mapping must match the migrations (migrations:diff must find no changes)
 	$(COMPOSE) up -d $(TEST_SERVICES)
 	$(MAKE) test-database
 	$(RUN_PHP_TEST) sh -c 'out=$$(bin/console migrations:diff --no-interaction 2>&1); echo "$$out" | grep -q "No changes detected" || { echo "$$out"; echo "Doctrine mapping differs from migrations."; exit 1; }; echo "Mapping is in sync with migrations."'
@@ -146,10 +153,10 @@ check-cs: ## Coding standard (fixes files)
 check-cs-check: ## Coding standard (dry run)
 	$(RUN_PHP) vendor/bin/php-cs-fixer fix --dry-run --diff
 
-check-phpstan: ## PHPStan (generates Codeception actors first)
+check-phpstan: prepare-writable-dirs ## PHPStan (generates Codeception actors first)
 	$(RUN_PHP) sh -c "vendor/bin/codecept build -q && vendor/bin/phpstan analyse --no-progress --memory-limit=1G"
 
-check-latte: ## Latte lint
+check-latte: prepare-writable-dirs ## Latte lint
 	$(RUN_PHP) bin/latte-lint
 
 check-types: ## TypeScript type check (frontend and service worker)

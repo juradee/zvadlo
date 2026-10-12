@@ -9,8 +9,10 @@ RUN install-php-extensions soap intl pdo_mysql zip opcache \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY docker/containers/php/ini/php.ini /usr/local/etc/php/conf.d/zz-app.ini
-COPY docker/containers/php/ini/www.conf /usr/local/etc/php-fpm.d/zz-app.conf
+COPY docker/containers/php/ini/www.ci.conf /usr/local/etc/php-fpm.d/zz-app.conf
 
-COPY . /app
+RUN addgroup -S app && adduser -S -G app app
+COPY --chown=app:app . /app
 WORKDIR /app
+USER app
 RUN mkdir -p log temp uploads www/assets tests/_output tests/_support/_generated
