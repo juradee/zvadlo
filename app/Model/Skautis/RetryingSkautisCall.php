@@ -9,9 +9,6 @@ use Skaut\Skautis\Wsdl\AuthenticationException;
 use Skaut\Skautis\Wsdl\PermissionException;
 use Skaut\Skautis\Wsdl\WsdlException;
 
-use function str_contains;
-use function usleep;
-
 /**
  * Retries transient transport failures from skautIS without hiding authentication, permission or domain errors.
  */
@@ -51,7 +48,7 @@ final class RetryingSkautisCall
                     throw $exception;
                 }
 
-                usleep(self::RETRY_DELAY_MICROSECONDS * $attempt);
+                \usleep(self::RETRY_DELAY_MICROSECONDS * $attempt);
             }
         }
 
@@ -62,7 +59,7 @@ final class RetryingSkautisCall
     {
         for ($current = $exception; $current !== null; $current = $current->getPrevious()) {
             foreach (self::RETRYABLE_MESSAGES as $message) {
-                if (str_contains($current->getMessage(), $message)) {
+                if (\str_contains($current->getMessage(), $message)) {
                     return true;
                 }
             }

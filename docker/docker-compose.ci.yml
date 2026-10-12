@@ -35,6 +35,10 @@ services:
             dockerfile: docker/containers/php/Dockerfile.ci
             args:
                 PHP_VERSION: ${PHP_VERSION:-8.4}
+        networks:
+            default:
+                aliases:
+                    - php
         volumes: !override
             - ci-log:/app/log
             - ci-temp:/app/temp
