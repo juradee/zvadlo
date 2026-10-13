@@ -6,4 +6,8 @@ declare(strict_types=1);
 
 require __DIR__.'/../../vendor/autoload.php';
 
-return App\Bootstrap::boot()->createContainer()->getByType(Doctrine\ORM\EntityManagerInterface::class);
+$configurator = App\Bootstrap::boot();
+// The application lets DBAL ask the server for its version; PHPStan runs without a database.
+$configurator->addConfig(['dbal' => ['connections' => ['default' => ['serverVersion' => 'mariadb-11.4.0']]]]);
+
+return $configurator->createContainer()->getByType(Doctrine\ORM\EntityManagerInterface::class);
