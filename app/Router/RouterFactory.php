@@ -12,7 +12,9 @@ final class RouterFactory
     {
         $router = new RouteList();
 
-        // Login callbacks must stay at these paths: they are the return URLs registered with the skautIS AppID.
+        // The current skautIS AppID posts its login token to this registered callback.
+        $router->addRoute('login', 'Auth:skautIS');
+        // Keep the former callback paths working for existing test and development AppIDs.
         $router->addRoute('sign/<action>[/back-<backlink>]', 'Auth:in');
         $router->addRoute('prehled', 'Dashboard:default');
         $router->addRoute('session/keep-alive', 'Session:keepAlive');

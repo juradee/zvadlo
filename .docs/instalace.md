@@ -11,7 +11,7 @@ Dokud Zvadlo nemá vlastní skautIS AppID, používá doménu a AppID h.skauting
 127.0.0.1   moje-zvadlo.cz
 ```
 
-skautIS po přihlášení posílá POST na adresu registrovanou u AppID (`/sign/skaut-i-s`), takže při ladění
+skautIS po přihlášení posílá POST na adresu registrovanou u AppID (`/login`), takže při ladění
 přihlášení musí být stack h.skautingu zastavený; oba používají port 80.
 
 ## První spuštění
