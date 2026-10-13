@@ -161,6 +161,8 @@ task('zvadlo:shared_symlinks', static function (): void {
     run('test "$(readlink -f {{release_path}}/log)" = "$(readlink -f {{deploy_path}}/shared/log)"');
     run('test "$(readlink -f {{release_path}}/uploads)" = "$(readlink -f {{deploy_path}}/shared/uploads)"');
     run('test "$(readlink -f {{release_path}}/temp/sessions)" = "$(readlink -f {{deploy_path}}/shared/temp/sessions)"');
+    // Deployer creates the shared dirs over SSH as 0755; the web PHP writes to them through the group, as in h.skauting.
+    run('chmod 0775 {{deploy_path}}/shared/log {{deploy_path}}/shared/uploads {{deploy_path}}/shared/temp/sessions');
     run('test -w {{deploy_path}}/shared/log');
     run('ln -sfn {{release_path}}/www {{web_root_symlink}}');
     run('test -L {{web_root_symlink}}');
