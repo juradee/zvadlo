@@ -23,11 +23,9 @@ final class WebCest
         $I->fillField('place', 'Chata Ostrá');
         $I->fillField('description', "Sraz **v pátek** v 16:30.\n\nNávrat v neděli.");
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->clickByJs('[data-test="event-submit"]');
-        $I->waitForPageText('Akce byla založena', 10);
+        $I->clickByJsAndWaitForPageText('[data-test="event-submit"]', 'Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
-        $I->click('Otevřít přihlašování');
-        $I->waitForPageText('Stav akce byl změněn', 10);
+        $I->clickAndWaitForPageText('Otevřít přihlašování', 'Stav akce byl změněn', 10);
 
         $I->click('[data-test="edit-web"]');
         $I->see('Miniweb akce', 'h1');
@@ -36,17 +34,14 @@ final class WebCest
 
         $I->fillField('[data-test="text-form"] input[name="title"]', 'Co s sebou');
         $I->fillField('[data-test="text-form"] textarea[name="body"]', "- spacák\n- **baterka**");
-        $I->click('Přidat text');
-        $I->waitForPageText('Blok byl uložen', 10);
+        $I->clickAndWaitForPageText('Přidat text', 'Blok byl uložen', 10);
 
         $I->fillField('[data-test="link-form"] input[name="title"]', 'Fotky z loňska');
         $I->fillField('[data-test="link-form"] input[name="url"]', 'https://photos.example.cz/album');
-        $I->click('Přidat odkaz');
-        $I->waitForPageText('Blok byl uložen', 10);
+        $I->clickAndWaitForPageText('Přidat odkaz', 'Blok byl uložen', 10);
 
         $I->attachFile('[data-test="file-form"] input[name="file"]', 'zvadlo.pdf');
-        $I->click('Nahrát soubor');
-        $I->waitForPageText('Soubor byl uložen', 10);
+        $I->clickAndWaitForPageText('Nahrát soubor', 'Soubor byl uložen', 10);
         $I->seeNumberOfElements('[data-test="block-row"]', 3);
         $I->see('zvadlo.pdf', '[data-test="blocks"]');
 
@@ -72,8 +67,7 @@ final class WebCest
 
         $I->amOnPage('/akce/'.$eventId.'/web');
         $I->executeJS('window.confirm = () => true;');
-        $I->click('Obnovit odkaz miniwebu');
-        $I->waitForPageText('Odkaz miniwebu byl obnoven', 10);
+        $I->clickAndWaitForPageText('Obnovit odkaz miniwebu', 'Odkaz miniwebu byl obnoven', 10);
         $I->amOnUrl($webLink);
         $I->see('Stránka nenalezena', 'h1');
     }

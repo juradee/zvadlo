@@ -24,8 +24,7 @@ final class SessionCest
 
         $I->seeCheckboxIsChecked('[data-test="remember-role"]');
         $I->selectOption('[data-test="role-select"]', 'Činovník: Středisko Sluneční hodiny');
-        $I->click('[data-test="role-switch"]');
-        $I->waitForPageText('Role byla přepnuta.', 10);
+        $I->clickAndWaitForPageText('[data-test="role-switch"]', 'Role byla přepnuta.', 10);
         $I->see('Činovník', '[data-test="current-role"]');
 
         // skautIS hands over the troop leader role again; Zvadlo restores the remembered one.
@@ -37,8 +36,7 @@ final class SessionCest
         $I->uncheckOption('[data-test="remember-role"]');
         $I->uncheckOption('[data-test="extend-login"]');
         $I->selectOption('[data-test="role-select"]', 'Vedoucí oddílu: 3. oddíl Vlčata');
-        $I->click('[data-test="role-switch"]');
-        $I->waitForPageText('Role byla přepnuta.', 10);
+        $I->clickAndWaitForPageText('[data-test="role-switch"]', 'Role byla přepnuta.', 10);
         $I->dontSeeElement('body[data-session-keep-alive-url]');
 
         $I->amOnPage('/sign/skautis-logout');

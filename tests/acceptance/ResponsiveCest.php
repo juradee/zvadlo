@@ -56,24 +56,20 @@ final class ResponsiveCest
         $I->fillDate('dateTo', '2027-04-11');
         $I->selectOption('publicRegistration', 'open');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->clickByJs('[data-test="event-submit"]');
-        $I->waitForPageText('Akce byla založena', 10);
+        $I->clickByJsAndWaitForPageText('[data-test="event-submit"]', 'Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
         $I->amOnPage('/akce/'.$eventId.'/pole');
         $I->selectOption('type', 'výběr jedné možnosti');
         $I->fillField('label', 'Doprava');
         $I->fillField('options', "autobus\nvlastní");
-        $I->click('Přidat pole');
-        $I->waitForPageText('Pole bylo přidáno', 10);
+        $I->clickAndWaitForPageText('Přidat pole', 'Pole bylo přidáno', 10);
         $I->amOnPage('/akce/'.$eventId);
-        $I->click('Otevřít přihlašování');
-        $I->waitForPageText('Stav akce byl změněn', 10);
+        $I->clickAndWaitForPageText('Otevřít přihlašování', 'Stav akce byl změněn', 10);
 
         $I->amOnPage('/akce/'.$eventId.'/pozvani');
         $I->waitForElementNotVisible('[data-test="address-loader"]', 15);
         $I->checkOption('Malá Anna');
-        $I->clickByJs('[data-test="invite-submit"]');
-        $I->waitForPageText('Přidáno 1 členů', 10);
+        $I->clickByJsAndWaitForPageText('[data-test="invite-submit"]', 'Přidáno 1 členů', 10);
         $I->click('Malá Anna', '[data-test="registration-list"]');
         $I->waitForElement('[data-test="personal-link"]', 10);
         $registrationPage = $I->grabFromCurrentUrl();

@@ -30,8 +30,7 @@ final class LoginCest
         $I->loginAsFixtureUser();
 
         $I->selectOption('[data-test="role-select"]', 'Vedoucí střediska: Středisko Sluneční hodiny');
-        $I->click('[data-test="role-switch"]');
-        $I->waitForPageText('Role byla přepnuta.', 10);
+        $I->clickAndWaitForPageText('[data-test="role-switch"]', 'Role byla přepnuta.', 10);
 
         $I->see('Vedoucí střediska', '[data-test="current-role"]');
         $I->see('Středisko Sluneční hodiny', '[data-test="edit-units"]');
@@ -39,8 +38,7 @@ final class LoginCest
         $I->see('4. oddíl Skauti', '[data-test="edit-units"]');
 
         $I->selectOption('[data-test="role-select"]', 'Činovník: Středisko Sluneční hodiny');
-        $I->click('[data-test="role-switch"]');
-        $I->waitForPageText('Role byla přepnuta.', 10);
+        $I->clickAndWaitForPageText('[data-test="role-switch"]', 'Role byla přepnuta.', 10);
 
         $I->see('Vaše role neumožňuje spravovat akce', '[data-test="edit-units"]');
         $I->see('4. oddíl Skauti', '[data-test="read-units"]');

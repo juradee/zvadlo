@@ -162,6 +162,94 @@ final class Acceptance extends Module
         throw new RuntimeException('The text '.$text.' did not appear within '.$timeout.' seconds.');
     }
 
+    /**
+     * Clicks a control that redirects and waits for the expected text in the replacement document.
+     *
+     * @param mixed $locator Codeception link, CSS or XPath locator
+     * @param mixed $context Codeception context locator
+     */
+    public function clickAndWaitForPageText(mixed $locator, string $text, int $timeout = 10, mixed $context = null): void
+    {
+        $marker = $this->pageMarker();
+        $this->webDriver()->click($locator, $context);
+        $this->waitForReplacementPageText($marker, $text, $timeout);
+    }
+
+    /**
+     * Clicks a redirecting control protected by a browser confirmation dialog.
+     *
+     * @param mixed $locator Codeception link, CSS or XPath locator
+     * @param mixed $context Codeception context locator
+     */
+    public function clickAndAcceptPopupAndWaitForPageText(mixed $locator, string $text, int $timeout = 10, mixed $context = null): void
+    {
+        $marker = $this->pageMarker();
+        $webDriver = $this->webDriver();
+        $webDriver->click($locator, $context);
+        $webDriver->acceptPopup();
+        $this->waitForReplacementPageText($marker, $text, $timeout);
+    }
+
+    /**
+     * JavaScript variant of clickAndWaitForPageText() for controls WebDriver cannot interact with directly.
+     */
+    public function clickByJsAndWaitForPageText(string $selector, string $text, int $timeout = 10): void
+    {
+        $marker = $this->pageMarker();
+        $selectorJson = json_encode($selector, \JSON_THROW_ON_ERROR);
+        $clicked = $this->webDriver()->executeJS(\sprintf(
+            'const target = document.querySelector(%s); if (target === null) return false; target.click(); return true;',
+            $selectorJson,
+        ));
+        if ($clicked !== true) {
+            throw new RuntimeException('The click target '.$selector.' is not present.');
+        }
+
+        $this->waitForReplacementPageText($marker, $text, $timeout);
+    }
+
+    private function pageMarker(): string
+    {
+        $marker = $this->webDriver()->executeJS(<<<'JS'
+            if (!document.documentElement.dataset.acceptancePageMarker) {
+                document.documentElement.dataset.acceptancePageMarker = Date.now().toString(36) + Math.random().toString(36).slice(2);
+            }
+            return document.documentElement.dataset.acceptancePageMarker;
+            JS);
+
+        return (string) $marker;
+    }
+
+    private function waitForReplacementPageText(string $previousMarker, string $text, int $timeout): void
+    {
+        $textJson = json_encode($text, \JSON_THROW_ON_ERROR);
+        $deadline = microtime(true) + $timeout;
+
+        while (microtime(true) < $deadline) {
+            try {
+                $page = $this->webDriver()->executeJS(<<<JS
+                    if (!document.documentElement.dataset.acceptancePageMarker) {
+                        document.documentElement.dataset.acceptancePageMarker = Date.now().toString(36) + Math.random().toString(36).slice(2);
+                    }
+                    return [
+                        document.documentElement.dataset.acceptancePageMarker,
+                        document.body !== null && document.body.innerText.includes({$textJson}),
+                    ];
+                    JS);
+                if (\is_array($page) && $page[0] !== $previousMarker && $page[1] === true) {
+                    return;
+                }
+            } catch (WebDriverException $exception) {
+                if (! $this->isDocumentReplacementError($exception)) {
+                    throw $exception;
+                }
+            }
+            usleep(100000);
+        }
+
+        throw new RuntimeException('The replacement page with text '.$text.' did not appear within '.$timeout.' seconds.');
+    }
+
     private function isDocumentReplacementError(WebDriverException $exception): bool
     {
         $message = $exception->getMessage();

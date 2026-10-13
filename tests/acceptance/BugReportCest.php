@@ -24,8 +24,7 @@ final class BugReportCest
         $I->see('jan.novak@example.cz');
         $I->fillField('description', 'Po kliknutí na Uložit se stránka jen znovu načte a nic se neuloží.');
         $I->attachFile('screenshot', 'screenshot.png');
-        $I->click('Odeslat hlášení');
-        $I->waitForPageText('Hlášení technické chyby bylo uloženo a odesláno správcům.', 10);
+        $I->clickAndWaitForPageText('Odeslat hlášení', 'Hlášení technické chyby bylo uloženo a odesláno správcům.', 10);
         $I->seeEmailInMailpit('admin@example.cz', 'Hlášení technické chyby');
 
         $I->click('[data-test="nav-admin"]');
@@ -42,14 +41,12 @@ final class BugReportCest
 
         $I->clearMailpit();
         $I->fillField('[data-test="reply-form"] textarea[name="message"]', 'Díky za hlášení, podíváme se na to.');
-        $I->click('Odeslat odpověď');
-        $I->waitForPageText('Odpověď autorovi hlášení byla odeslána.', 10);
+        $I->clickAndWaitForPageText('Odeslat odpověď', 'Odpověď autorovi hlášení byla odeslána.', 10);
         $I->see('Díky za hlášení, podíváme se na to.', '[data-test="report-replies"]');
         $I->seeEmailInMailpit('jan.novak@example.cz', 'Zvadlo');
 
         $I->clearMailpit();
-        $I->click('Potvrdit opravu');
-        $I->waitForPageText('Hlášení bylo označeno jako opravené a autor informován e-mailem.', 10);
+        $I->clickAndWaitForPageText('Potvrdit opravu', 'Hlášení bylo označeno jako opravené a autor informován e-mailem.', 10);
         $I->see('opraveno', '[data-test="bug-reports-resolved"]');
         $I->seeEmailInMailpit('jan.novak@example.cz', 'Zvadlo');
     }
@@ -61,21 +58,17 @@ final class BugReportCest
         $I->see('1', '[data-test="admin-users-config"]');
         $I->fillField('userId', '4242');
         $I->checkOption('input[name="roles[]"][value="support"]');
-        $I->click('Přidat uživatele');
-        $I->waitForPageText('Uživateli byly přiřazeny systémové role.', 10);
+        $I->clickAndWaitForPageText('Přidat uživatele', 'Uživateli byly přiřazeny systémové role.', 10);
         $I->see('4242', '[data-test="admin-user-row"]');
         $I->see('support', '[data-test="admin-user-row"]');
 
         $I->click('Upravit', '[data-test="admin-user-row"]');
         $I->seeCheckboxIsChecked('input[name="roles[]"][value="support"]');
         $I->checkOption('input[name="roles[]"][value="admin"]');
-        $I->click('Uložit role');
-        $I->waitForPageText('Systémové role uživatele byly upraveny.', 10);
+        $I->clickAndWaitForPageText('Uložit role', 'Systémové role uživatele byly upraveny.', 10);
         $I->see('admin, support', '[data-test="admin-user-row"]');
 
-        $I->click('Odebrat role', '[data-test="admin-user-row"]');
-        $I->acceptPopup();
-        $I->waitForPageText('Všechny systémové role uživatele byly odebrány.', 10);
+        $I->clickAndAcceptPopupAndWaitForPageText('Odebrat role', 'Všechny systémové role uživatele byly odebrány.', 10, '[data-test="admin-user-row"]');
         $I->dontSee('4242', '[data-test="admin-users-list"]');
 
         $I->amOnPage('/admin/statistiky');

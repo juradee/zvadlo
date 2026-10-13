@@ -23,11 +23,9 @@ final class SkautisParticipantCest
         $I->fillDate('dateTo', '2027-06-12');
         $I->selectOption('publicRegistration', 'jen přes skautIS');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->clickByJs('[data-test="event-submit"]');
-        $I->waitForPageText('Akce byla založena', 10);
+        $I->clickByJsAndWaitForPageText('[data-test="event-submit"]', 'Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
-        $I->click('Otevřít přihlašování');
-        $I->waitForPageText('Stav akce byl změněn', 10);
+        $I->clickAndWaitForPageText('Otevřít přihlašování', 'Stav akce byl změněn', 10);
         $publicLink = (string) $I->grabValueFrom('[data-test="public-link"]');
         $I->assertSame(1, preg_match('~/(\d+)/([a-z0-9-]+)/prihlasit\?t=([A-Za-z0-9_-]+)~', $publicLink, $match), $publicLink);
         $backlink = 'p:'.($match[1] ?? '').':'.($match[2] ?? '').':'.($match[3] ?? '');

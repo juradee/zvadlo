@@ -32,9 +32,7 @@ final class EventCest
         $I->fillField('dateTo', '11.04.2027');
         $I->fillField('place', 'Chata Ostrá');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->clickByJs('[data-test="event-submit"]');
-
-        $I->waitForPageText('Akce byla založena', 10);
+        $I->clickByJsAndWaitForPageText('[data-test="event-submit"]', 'Akce byla založena', 10);
         $I->seeInCurrentUrl('/akce/');
         $I->see('Jarní výprava', '[data-test="event-name"]');
         $I->see('koncept', '[data-test="event-state"]');
@@ -44,23 +42,20 @@ final class EventCest
         $I->fillField('label', 'Alergie a léky');
         $I->selectOption('type', 'text');
         $I->dontSeeElement('textarea[name="options"]');
-        $I->click('Přidat pole');
-        $I->waitForPageText('Pole bylo přidáno', 10);
+        $I->clickAndWaitForPageText('Přidat pole', 'Pole bylo přidáno', 10);
 
         $I->selectOption('type', 'výběr jedné možnosti');
         $I->waitForElementVisible('textarea[name="options"]', 5);
         $I->fillField('label', 'Doprava');
         $I->fillField('options', "autobus\nvlastní");
         $I->checkOption('required');
-        $I->click('Přidat pole');
-        $I->waitForPageText('Pole bylo přidáno', 10);
+        $I->clickAndWaitForPageText('Přidat pole', 'Pole bylo přidáno', 10);
         $I->seeNumberOfElements('[data-test="field-row"]', 2);
         $I->see('autobus, vlastní', '[data-test="fields"]');
 
         $I->amOnPage('/akce/'.$eventId);
         $I->see('Doprava', '[data-test="field-list"]');
-        $I->click('Otevřít přihlašování');
-        $I->waitForPageText('Stav akce byl změněn', 10);
+        $I->clickAndWaitForPageText('Otevřít přihlašování', 'Stav akce byl změněn', 10);
         $I->see('otevřená', '[data-test="event-state"]');
 
         // Without a year the overview shows every upcoming event, also those of the next year.
@@ -107,8 +102,7 @@ final class EventCest
         $I->seeCheckboxIsChecked('waitlistEnabled');
         $I->uncheckOption('waitlistEnabled');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->clickByJs('[data-test="event-submit"]');
-        $I->waitForPageText('Akce byla založena', 10);
+        $I->clickByJsAndWaitForPageText('[data-test="event-submit"]', 'Akce byla založena', 10);
         $I->see('do konce akce (01.05.2027)', '[data-test="deadline"]');
         $I->see('20, bez čekací listiny', '[data-test="capacity"]');
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
@@ -121,8 +115,7 @@ final class EventCest
 
         $I->amOnPage('/prehled');
         $I->selectOption('[data-test="role-select"]', 'Činovník: Středisko Sluneční hodiny');
-        $I->click('[data-test="role-switch"]');
-        $I->waitForPageText('Role byla přepnuta.', 10);
+        $I->clickAndWaitForPageText('[data-test="role-switch"]', 'Role byla přepnuta.', 10);
 
         $I->amOnPage('/akce/'.$eventId);
         $I->see('Střediskový sněm', '[data-test="event-name"]');

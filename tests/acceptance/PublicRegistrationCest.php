@@ -22,11 +22,9 @@ final class PublicRegistrationCest
         $I->fillDate('dateTo', '2027-06-05');
         $I->selectOption('publicRegistration', 'veřejný odkaz (kdokoli s odkazem)');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->clickByJs('[data-test="event-submit"]');
-        $I->waitForPageText('Akce byla založena', 10);
+        $I->clickByJsAndWaitForPageText('[data-test="event-submit"]', 'Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
-        $I->click('Otevřít přihlašování');
-        $I->waitForPageText('Stav akce byl změněn', 10);
+        $I->clickAndWaitForPageText('Otevřít přihlašování', 'Stav akce byl změněn', 10);
         $I->seeElement('[data-test="public-link-box"]');
         // Plain http has no navigator.clipboard; the button must still copy through the legacy command.
         $I->executeJS("Object.defineProperty(navigator, 'clipboard', {value: undefined, configurable: true});");
@@ -85,8 +83,7 @@ final class PublicRegistrationCest
         $I->seeElement('[data-test="pair-form"]');
         $I->fillField('reason', 'nepatří k nám');
         $I->executeJS('window.confirm = () => true;');
-        $I->click('Zamítnout přihlášku');
-        $I->waitForPageText('Přihláška byla zamítnuta', 10);
+        $I->clickAndWaitForPageText('Zamítnout přihlášku', 'Přihláška byla zamítnuta', 10);
         $I->see('zamítnuto', '[data-test="registration-state"]');
         $I->see('nepatří k nám', '[data-test="registration-log"]');
         $I->dontSee('Kdesi 1');
@@ -125,8 +122,7 @@ final class PublicRegistrationCest
         $I->seeElement('[data-test="camp-info"]');
         $I->seeElement('input[name="name"][disabled]');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
-        $I->click('Založit tábor');
-        $I->waitForPageText('Tábor byl založen podle skautISu', 10);
+        $I->clickAndWaitForPageText('Založit tábor', 'Tábor byl založen podle skautISu', 10);
         $I->see('Letní tábor Vlčat', '[data-test="event-name"]');
         $I->see('tábor', '[data-test="event-name"] ~ p .badge');
         $I->see('03.07.2027 – 17.07.2027');
