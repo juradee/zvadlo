@@ -10,6 +10,9 @@ declare(strict_types=1);
 
 namespace Deployer;
 
+use RuntimeException;
+use Throwable;
+
 require_once 'contrib/rsync.php';
 require_once 'recipe/common.php';
 
@@ -45,7 +48,7 @@ function requiredEnv(string $name): string
 {
     $value = getenv($name);
     if ($value === false || $value === '') {
-        throw new \RuntimeException(\sprintf('Missing required deploy variable "%s".', $name));
+        throw new RuntimeException(\sprintf('Missing required deploy variable "%s".', $name));
     }
 
     return $value;
@@ -75,14 +78,14 @@ desc('Build .env.local and the Google credentials file from the environment of t
 task('zvadlo:build_runtime_files', static function (): void {
     $dir = __DIR__.'/.deployment';
     if (! is_dir($dir) && ! mkdir($dir, 0o777, true) && ! is_dir($dir)) {
-        throw new \RuntimeException('Unable to create '.$dir);
+        throw new RuntimeException('Unable to create '.$dir);
     }
 
     $appEnv = requiredEnv('APP_ENV');
     $baseUrl = rtrim(requiredEnv('APP_BASE_URL'), '/');
     $dbFixToken = requiredEnv('DB_FIX_TOKEN_SHA256');
     if (\strlen($dbFixToken) !== 64 || ! ctype_xdigit($dbFixToken)) {
-        throw new \RuntimeException('Deploy variable "DB_FIX_TOKEN_SHA256" must be a 64-character hexadecimal token.');
+        throw new RuntimeException('Deploy variable "DB_FIX_TOKEN_SHA256" must be a 64-character hexadecimal token.');
     }
 
     $values = [
@@ -144,9 +147,44 @@ task('zvadlo:warmup', static function (): void {
     run('cd {{release_path}} && {{bin/php}} bin/console list --quiet');
 });
 
-desc('Point the web root of the hosting at the new release');
-task('zvadlo:web_root', static function (): void {
+desc('Verify release symlinks and point the web root of the hosting at the new release');
+task('zvadlo:shared_symlinks', static function (): void {
+    run('test -L {{release_path}}/log');
+    run('test -L {{release_path}}/uploads');
+    run('test -L {{release_path}}/temp/sessions');
+    run('test "$(readlink -f {{release_path}}/log)" = "$(readlink -f {{deploy_path}}/shared/log)"');
+    run('test "$(readlink -f {{release_path}}/uploads)" = "$(readlink -f {{deploy_path}}/shared/uploads)"');
+    run('test "$(readlink -f {{release_path}}/temp/sessions)" = "$(readlink -f {{deploy_path}}/shared/temp/sessions)"');
+    run('test -w {{deploy_path}}/shared/log');
     run('ln -sfn {{release_path}}/www {{web_root_symlink}}');
+    run('test -L {{web_root_symlink}}');
+    run('test "$(readlink -f {{web_root_symlink}})" = "$(readlink -f {{release_path}}/www)"');
+});
+
+desc('Verify that the public web root already serves the new release');
+task('zvadlo:verify_web_root', static function (): void {
+    $buildHash = get('build_hash');
+    $checkFile = '.deploy-check-'.$buildHash.'.php';
+    $expectedResponse = 'deploy-ok:'.$buildHash;
+    $remoteCheckFile = '{{release_path}}/www/'.escapeshellarg($checkFile);
+    $phpCheck = \sprintf(
+        "<?php if (function_exists('opcache_reset')) { @opcache_reset(); } header('Content-Type: text/plain; charset=utf-8'); echo %s;\n",
+        var_export($expectedResponse, true),
+    );
+
+    run(\sprintf('printf %s > %s', escapeshellarg($phpCheck), $remoteCheckFile));
+
+    try {
+        $url = rtrim(requiredEnv('APP_BASE_URL'), '/').'/'.$checkFile;
+        $actualResponse = runLocally('curl --fail --silent --show-error --max-time 20 '.escapeshellarg($url));
+        if ($actualResponse !== $expectedResponse) {
+            throw new RuntimeException(\sprintf('Web root verification returned "%s", expected "%s".', $actualResponse, $expectedResponse));
+        }
+    } finally {
+        run('rm -f '.$remoteCheckFile);
+    }
+
+    writeln('<info>Public web root serves release '.$buildHash.'.</info>');
 });
 
 desc('Ask /health which release answers');
@@ -155,7 +193,7 @@ task('zvadlo:verify', static function (): void {
     $expected = get('build_hash');
     try {
         $body = runLocally('curl --fail --silent --show-error --max-time 20 '.escapeshellarg($url));
-    } catch (\Throwable $exception) {
+    } catch (Throwable $exception) {
         warning('Health check failed: '.$exception->getMessage());
 
         return;
@@ -185,16 +223,14 @@ task('deploy', [
     'rsync',
     'zvadlo:upload_maintenance_runtime_files',
     'deploy:shared',
-    'deploy:symlink',
-    'zvadlo:web_root',
+    'zvadlo:shared_symlinks',
+    'zvadlo:verify_web_root',
     'zvadlo:db_fix',
     'zvadlo:restore_runtime_files',
     'zvadlo:warmup',
+    'deploy:publish',
     'zvadlo:disable_db_fix',
-    'deploy:unlock',
-    'deploy:cleanup',
     'zvadlo:verify',
-    'deploy:success',
 ]);
 
 after('deploy:failed', 'deploy:unlock');

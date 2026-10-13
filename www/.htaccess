@@ -1,13 +1,38 @@
 # Apache configuration for the shared hosting; nginx has its own config in docker/.
+# The hosting publishes this directory through the DEPLOY_WEB_ROOT symlink.
+Options -Indexes
+AddType text/cache-manifest .manifest
+
+<IfModule mod_headers.c>
+    Header always add Referrer-Policy "strict-origin"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set X-Content-Type-Options "nosniff"
+
+    <If "%{HTTP_HOST} == 'zvadlo.skauting.cz'">
+        Header always set Strict-Transport-Security "max-age=7884000"
+    </If>
+
+    # Vite places content-hashed build output in www/assets/assets.
+    <If "%{REQUEST_URI} =~ m#^/assets/assets/#">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </If>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
+
+    # www.zvadlo.skauting.cz -> https://zvadlo.skauting.cz
+    RewriteCond %{HTTP_HOST} ^www\.(zvadlo\.skauting\.cz)$ [NC]
+    RewriteRule ^ https://zvadlo.skauting.cz%{REQUEST_URI} [L,R=301]
+
+    # http -> https on the production hostname
+    RewriteCond %{HTTP_HOST} ^zvadlo\.skauting\.cz$ [NC]
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://zvadlo.skauting.cz%{REQUEST_URI} [L,R=301]
+
     RewriteRule ^\.well-known/.* - [L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule !\.(pdf|js|ico|gif|jpg|jpeg|png|webp|svg|css|woff2?|txt|json)$ index.php [L]
-</IfModule>
-
-<IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
 </IfModule>
