@@ -34,7 +34,9 @@ a `production`; proměnné a tajemství žijí tam, nikdy v repozitáři.
    sestaví assety Vite a zabalí release bez testů, dockeru a dokumentace.
 2. `deploy-beta` (větve `beta/**`, jen s `DEPLOY_BETA=true`), `deploy-test` (`master`, jen s `DEPLOY_TEST=true`)
    a `deploy-production` (`master`, environment se schválením v GitHubu; běží po `deploy-test`, nebo rovnou po
-   buildu, když je test vypnutý) stáhnou release a spustí `dep deploy <cíl> -f deploy.php`.
+   buildu, když je test vypnutý) stáhnou release a spustí `dep deploy <cíl> -f deploy.php`. Když je nastavený
+   `DEPLOY_PREPARE_PORT`, workflow nejprve otevře a nechá zavřít SSH relaci na tomto portu a počká, až je
+   dostupný finální `DEPLOY_PORT`.
 3. `deploy.php` vytvoří z proměnných environmentu soubor `.env.local` a `google-credentials.json`
    (`zvadlo:build_runtime_files`), nahraje je do `shared/`, rsyncem nakopíruje release do `releases/<hash>`,
    nasdílí `log/`, `uploads/`, `temp/sessions/`, spustí migrace (`migrations:migrate --all-or-nothing`), prohřeje
@@ -52,9 +54,11 @@ Proměnné environmentu (`vars`):
 | Proměnná | Význam |
 |---|---|
 | `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH` | SSH cíl a kořen nasazení (`releases/`, `shared/`, `current`) |
+| `DEPLOY_PREPARE_PORT` | volitelný port pro krátké SSH spojení, které zpřístupní `DEPLOY_PORT` |
 | `DEPLOY_PHP_BIN` | cesta k PHP CLI na hostingu (např. `/usr/bin/php8.4`) |
 | `DEPLOY_WEB_ROOT` | kam hosting ukazuje jako document root; symlink na `current/www` (výchozí `DEPLOY_PATH/www`) |
-| `DEPLOY_KNOWN_HOSTS` | řádek `known_hosts` serveru (`ssh-keyscan -p <port> <host>`), aby se ověřoval otisk |
+| `DEPLOY_KNOWN_HOSTS` | řádek `known_hosts` pro `DEPLOY_PORT` (`ssh-keyscan -p <port> <host>`), aby se ověřoval otisk |
+| `DEPLOY_PREPARE_KNOWN_HOSTS` | řádek `known_hosts` pro `DEPLOY_PREPARE_PORT` (`ssh-keyscan -p <port> <host>`); povinný, když je přípravný port nastavený |
 | `APP_ENV`, `APP_BASE_URL`, `SKAUTIS_TEST_MODE`, `SEND_EMAIL`, `SYSTEM_EMAIL`, `ERROR_EMAILS` | viz [proměnné prostředí](implementacni-plan.md#proměnné-prostředí) |
 | `APPLICATION_ID` | skautIS AppID daného prostředí; není tajné, skautIS ho posílá jako parametr `appid` v URL přihlášení |
 | `TEST_BACKGROUND`, `ENVIRONMENT_LABEL`, `ENVIRONMENT_COLOR` | banner prostředí (na produkci `TEST_BACKGROUND=false`) |

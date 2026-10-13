@@ -184,10 +184,45 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Trust the server
+      - name: Trust SSH endpoints
+        env:
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_PREPARE_PORT: ${{ vars.DEPLOY_PREPARE_PORT }}
+          DEPLOY_PREPARE_KNOWN_HOSTS: ${{ vars.DEPLOY_PREPARE_KNOWN_HOSTS }}
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "${{ vars.DEPLOY_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          if [ -n "$DEPLOY_PREPARE_PORT" ]; then
+            if [ -z "$DEPLOY_PREPARE_KNOWN_HOSTS" ]; then
+              echo 'DEPLOY_PREPARE_KNOWN_HOSTS must be set when DEPLOY_PREPARE_PORT is set.' >&2
+              exit 1
+            fi
+            printf '%s\n' "$DEPLOY_PREPARE_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          fi
+
+      - name: Prepare SSH connection
+        if: vars.DEPLOY_PREPARE_PORT != ''
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PREPARE_PORT: ${{ vars.DEPLOY_PREPARE_PORT }}
+        run: |
+          set -euo pipefail
+          ssh -p "$DEPLOY_PREPARE_PORT" -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" true || \
+            echo 'The preparation SSH session ended as expected.'
+
+          for attempt in {1..30}; do
+            if ssh -p "$DEPLOY_PORT" -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" true; then
+              exit 0
+            fi
+            echo "Waiting for deploy SSH on port $DEPLOY_PORT... ($attempt/30)"
+            sleep 2
+          done
+
+          echo "Deploy SSH on port $DEPLOY_PORT did not become available." >&2
+          exit 1
 
       - name: Deploy
         run: dep deploy ${{ env.DEPLOY_TARGET }} -f deploy.php --no-interaction -v
@@ -195,6 +230,7 @@ jobs:
           DEPLOY_TARGET: ${{ github.job }}
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_PREPARE_PORT: ${{ vars.DEPLOY_PREPARE_PORT }}
           DEPLOY_USER: ${{ vars.DEPLOY_USER }}
           DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
           DEPLOY_PHP_BIN: ${{ vars.DEPLOY_PHP_BIN }}
