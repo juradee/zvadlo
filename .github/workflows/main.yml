@@ -245,6 +245,7 @@ jobs:
           DB_USER: ${{ vars.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_FIX_TOKEN_SHA256: ${{ secrets.DB_FIX_TOKEN_SHA256 }}
+          CRON_TOKEN: ${{ secrets.CRON_TOKEN }}
           SEND_EMAIL: ${{ vars.SEND_EMAIL }}
           SYSTEM_EMAIL: ${{ vars.SYSTEM_EMAIL }}
           ERROR_EMAILS: ${{ vars.ERROR_EMAILS }}

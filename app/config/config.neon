@@ -67,6 +67,8 @@ extensions:
     skautis: Skaut\SkautisNette\SkautisExtension
 
 scheduler:
+    # A lock per job: an HTTP cron call that runs past the next minute must not start the same job twice.
+    path: %tempDir%/scheduler
     jobs:
         - {cron: '* * * * *', callback: [@App\Model\Task\TaskRunner, run]}
         - {cron: '* * * * *', callback: [@App\Model\Hskauting\HskautingNotifier, runScheduled]}

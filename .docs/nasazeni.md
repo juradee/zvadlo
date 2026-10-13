@@ -25,7 +25,8 @@ a `production`; proměnné a tajemství žijí tam, nikdy v repozitáři.
    které workflow na daný server nenasazuje; dokud servery neexistují, jede jen produkce.
 6. **Po prvním deployi**: nastavit cron (níže), do `ADMIN_USER_IDS` dát skautIS ID prvního správce, ověřit
    `/health`, přihlášení přes skautIS a odeslání zkušebního e-mailu; jakmile je nastavený
-   `HSKAUTING_WEBHOOK_URL`, jednou spustit `php bin/console hskauting:push --all`.
+   `HSKAUTING_WEBHOOK_URL`, plánovač pošle změněné akce sám; `hskauting:push --all` (znovu poslat všechny) jde
+   spustit jen tam, kde se CLI k databázi připojí, ne na hostingu.
 
 ## Průběh nasazení
 
@@ -72,14 +73,18 @@ Proměnné environmentu (`vars`):
 Tajemství (`secrets`): `DEPLOY_SSH_KEY` (privátní klíč deploy účtu), `APP_SECRET` (32 B base64, `openssl rand -base64 32`;
 jeho změna zneplatní uložené Gmail tokeny a osobní odkazy), `DB_PASSWORD`, `GOOGLE_CREDENTIALS`
 (obsah JSON OAuth klienta), `SENTRY_DSN`, `GH_ISSUES_TOKEN`, `HSKAUTING_WEBHOOK_SECRET` (tajemství podpisu
-dávek pro h.skauting, stejné na obou stranách) a `DB_FIX_TOKEN_SHA256` (jednorázový 256bitový hexadecimální
-token pro HTTP migraci, vygenerovat `openssl rand -hex 32`).
+dávek pro h.skauting, stejné na obou stranách), `DB_FIX_TOKEN_SHA256` (jednorázový 256bitový hexadecimální
+token pro HTTP migraci, vygenerovat `openssl rand -hex 32`) a `CRON_TOKEN` (stejně vygenerovaný token, kterým cron
+volá `/cron.php`).
 
 ## Na serveru
 
-- Cron každou minutu v aktuálním release: `* * * * * cd /cesta/current && php bin/console scheduler:run`.
+- PHP z příkazové řádky se na hostingu k databázi nepřipojí, proto nic, co databázi potřebuje, nejde přes
+  `bin/console`: migrace jdou přes `/db_fix.php`, plánovač přes `/cron.php`.
+- Cron každou minutu volá plánovač přes HTTP: `* * * * * curl --silent --max-time 150 'https://zvadlo.skauting.cz/cron.php?token=<CRON_TOKEN>'`
+  (nebo stejnou URL ve webovém cronu hostingu). Bez platného tokenu vrací 403, v režimu údržby 503 a nic nespustí.
   Plánovač pouští frontu e-mailů (`tasks:run`), push změněných akcí do h.skautingu (`hskauting:push`, každou
-  minutu, po prvním nasazení jednou ručně s `--all`), denní upozornění na zámek úprav (7:00), retenci
+  minutu), denní upozornění na zámek úprav (7:00), retenci
   (`registrations:anonymize`, 4:00) a rotaci logů (`logs:rotate`, 3:30).
 - PWA: `/sw.js` a `/manifest.webmanifest` servíruje aplikace s hlavičkami `Cache-Control: no-cache` a hashem
   release, takže po nasazení prohlížeče vedoucích worker obnoví a staré cache smažou; ikony v `www/pwa/` se
@@ -99,11 +104,12 @@ token pro HTTP migraci, vygenerovat `openssl rand -hex 32`).
 stránku odstávky (503, `Retry-After`) ještě před startem Nette, takže funguje i při rozbité databázi. Adresy
 v `MAINTENANCE_ALLOWED_IPS` (IPv4/IPv6, i CIDR, oddělené čárkou) vidí aplikaci normálně a v liště mají červený
 štítek „Údržba“. `MAINTENANCE_STARTED_AT` a `MAINTENANCE_ENDS_AT` jsou ISO datumy (`2026-07-02T20:00:00+02:00`),
-na stránce se zobrazí jako `dd.mm.rrrr HH:mm`. Fronta a plánovač běží dál; při delší odstávce vypněte cron.
+na stránce se zobrazí jako `dd.mm.rrrr HH:mm`. Plánovač a fronta v údržbě stojí (`/cron.php` vrací 503), aby
+během deploye nepracovaly se starým schématem databáze; po vypnutí údržby pokračují tam, kde skončily.
 
 ## Retence osobních údajů
 
-Denní příkaz `registrations:anonymize` (ručně `bin/console registrations:anonymize --dry-run` ukáže počty)
+Denní úloha plánovače `registrations:anonymize` (v dockeru `bin/console registrations:anonymize --dry-run` ukáže počty)
 provádí kapitolu 14 specifikace: po `RETENTION_MONTHS_SYNCED` měsících od konce akce smaže odpovědi a poznámky
 všech přihlášek (`event.answers_forgotten_at`) a anonymizuje nečleny, kterým Zvadlo založilo osobu ve skautISu
 (`registration.skautis_person_created_at`); po `RETENTION_MONTHS_UNSYNCED` měsících anonymizuje nečleny bez osoby

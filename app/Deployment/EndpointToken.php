@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Deployment;
 
-final class MigrationToken
+final class EndpointToken
 {
     public static function matches(mixed $configuredToken, mixed $providedToken): bool
     {

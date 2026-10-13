@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Bootstrap;
-use App\Deployment\MigrationToken;
+use App\Deployment\EndpointToken;
 use App\Environment;
 use Doctrine\Migrations\Tools\Console\Command\MigrateCommand;
 use Nette\DI\Container;
@@ -17,7 +17,7 @@ header('Content-Type: text/plain; charset=utf-8');
 Environment::load(dirname(__DIR__));
 
 $providedToken = $_GET['token'] ?? $_POST['token'] ?? null;
-if (! MigrationToken::matches(getenv('DB_FIX_TOKEN_SHA256'), $providedToken)) {
+if (! EndpointToken::matches(getenv('DB_FIX_TOKEN_SHA256'), $providedToken)) {
     http_response_code(403);
     echo "403 Forbidden\n";
 

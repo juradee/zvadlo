@@ -87,6 +87,10 @@ task('zvadlo:build_runtime_files', static function (): void {
     if (\strlen($dbFixToken) !== 64 || ! ctype_xdigit($dbFixToken)) {
         throw new RuntimeException('Deploy variable "DB_FIX_TOKEN_SHA256" must be a 64-character hexadecimal token.');
     }
+    $cronToken = requiredEnv('CRON_TOKEN');
+    if (\strlen($cronToken) !== 64 || ! ctype_xdigit($cronToken)) {
+        throw new RuntimeException('Deploy variable "CRON_TOKEN" must be a 64-character hexadecimal token.');
+    }
 
     $values = [
         'APP_ENV' => $appEnv,
@@ -100,6 +104,7 @@ task('zvadlo:build_runtime_files', static function (): void {
         'DB_USER' => requiredEnv('DB_USER'),
         'DB_PASSWORD' => requiredEnv('DB_PASSWORD'),
         'DB_FIX_TOKEN_SHA256' => $dbFixToken,
+        'CRON_TOKEN' => $cronToken,
         'SEND_EMAIL' => optionalEnv('SEND_EMAIL') ?? 'true',
         'GOOGLE_REDIRECT_URI' => optionalEnv('GOOGLE_REDIRECT_URI') ?? $baseUrl.'/google/token',
         'TRACY_SHOW_BAR' => 'false',
