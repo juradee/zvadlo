@@ -22,13 +22,13 @@ final class SkautisSyncCest
         $I->fillDate('dateTo', '2027-05-15');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
         $I->clickByJs('[data-test="event-submit"]');
-        $I->waitForText('Akce byla založena', 10);
+        $I->waitForPageText('Akce byla založena', 10);
         $I->see('zatím nepropsaná', '[data-test="skautis-event"]');
 
         $I->click('[data-test="sync-link"]');
         $I->see('Propsání do skautISu', 'h1');
         $I->click('Založit akci ve skautISu');
-        $I->waitForText('Akce byla založena ve skautISu (ID 5001)', 10);
+        $I->waitForPageText('Akce byla založena ve skautISu (ID 5001)', 10);
         $I->seeElement('[data-test="skautis-event-link"]');
         $I->see('2', '[data-test="count-foreign"]');
         $I->see('0', '[data-test="count-missing"]');

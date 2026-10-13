@@ -36,7 +36,7 @@ final class RegistrationCest
         $I->checkOption('Malá Anna');
         $I->checkOption('Bezmailu Karel');
         $I->clickByJs('[data-test="invite-submit"]');
-        $I->waitForText('Přidáno 2 členů', 10);
+        $I->waitForPageText('Přidáno 2 členů', 10);
         $I->see('matka.mala@example.cz', '[data-test="registration-list"]');
         $I->see('anna.mala@example.cz', '[data-test="registration-list"]');
         $I->dontSee('otec.maly@example.cz', '[data-test="registration-list"] [data-test="recipient"]');
@@ -48,13 +48,13 @@ final class RegistrationCest
         $I->click($row.'//summary');
         $I->checkOption($row.'//label[contains(., "otec.maly@example.cz")]//input');
         $I->click($row.'//input[@name="save"]');
-        $I->waitForText('Adresy u Malá Anna byly uloženy', 10);
+        $I->waitForPageText('Adresy u Malá Anna byly uloženy', 10);
         $I->see('otec.maly@example.cz', $row);
 
         $I->amOnPage('/akce/'.$eventId.'/pozvani');
         $I->fillField('[data-test="non-member-form"] input[name="email"]', 'pavel@example.cz');
         $I->click('Přidat nečlena');
-        $I->waitForText('Nečlen pavel@example.cz byl přidán', 10);
+        $I->waitForPageText('Nečlen pavel@example.cz byl přidán', 10);
 
         $annaLink = $this->personalLink($I, $eventId, 'Malá Anna');
         $I->amOnUrl($annaLink);
@@ -78,12 +78,12 @@ final class RegistrationCest
         $I->checkOption('agreement');
         // The required yes/no field has to be ticked; nette-forms shows the message in a modal dialog.
         $I->click('Odeslat přihlášku');
-        $I->waitForText('Toto pole je třeba zaškrtnout.', 10);
+        $I->waitForPageText('Toto pole je třeba zaškrtnout.', 10);
         $I->executeJS("document.querySelector('dialog.netteFormsModal')?.close();");
         $I->waitForElementNotVisible('dialog.netteFormsModal', 5);
         $I->checkOption('Má zdravotní posudek');
         $I->click('Odeslat přihlášku');
-        $I->waitForText('Přihláška byla uložena', 10);
+        $I->waitForPageText('Přihláška byla uložena', 10);
         $I->see('přihlášen', '[data-test="registration-state"]');
         $I->see('ořechy', '[data-test="summary"]');
         $I->see('autobus', '[data-test="summary"]');
@@ -102,7 +102,7 @@ final class RegistrationCest
         $I->checkOption('agreement');
         $I->click('Odeslat přihlášku');
         // The last place is gone: the submit tells right away that Karel is a substitute.
-        $I->waitForText('účastník je proto zapsaný jako náhradník', 10);
+        $I->waitForPageText('účastník je proto zapsaný jako náhradník', 10);
         $I->see('čekací listina', '[data-test="registration-state"]');
 
         $I->amOnPage('/akce/'.$eventId.'/prihlasky');
@@ -119,7 +119,7 @@ final class RegistrationCest
         $I->dontSee('Přesunout mezi přihlášené');
         $I->click('Přijmout nad kapacitu (1 míst je obsazeno)');
         $I->acceptPopup();
-        $I->waitForText('Přijato nad kapacitu akce.', 10);
+        $I->waitForPageText('Přijato nad kapacitu akce.', 10);
         $I->see('nad kapacitu', '[data-test="registration-log"]');
         $I->see('přihlášen', '[data-test="registration-state"]');
 
@@ -142,11 +142,11 @@ final class RegistrationCest
         $I->fillField('[data-test="non-member-form"] input[name="firstName"]', 'Eliška');
         $I->fillField('[data-test="non-member-form"] input[name="lastName"]', 'Nováková');
         $I->click('Přidat nečlena');
-        $I->waitForText('Nečlen Nováková Eliška byl přidán', 10);
+        $I->waitForPageText('Nečlen Nováková Eliška byl přidán', 10);
         $I->amOnPage('/akce/'.$eventId.'/pozvani');
         $I->checkOption('Malá Anna');
         $I->clickByJs('[data-test="invite-submit"]');
-        $I->waitForText('Přidáno 1 členů', 10);
+        $I->waitForPageText('Přidáno 1 členů', 10);
 
         $guestLink = $this->personalLink($I, $eventId, 'Nováková Eliška');
         $I->amOnUrl($guestLink);
@@ -172,12 +172,12 @@ final class RegistrationCest
         $I->checkOption('Má zdravotní posudek');
         $I->checkOption('agreement');
         $I->click('Odeslat přihlášku');
-        $I->waitForText('Přihláška byla uložena', 10);
+        $I->waitForPageText('Přihláška byla uložena', 10);
         $I->see('přihlášen', '[data-test="registration-state"]');
 
         $I->click('[data-test="cancel-link"]');
         $I->click('Ano, zrušit účast');
-        $I->waitForText('Účast byla zrušena', 10);
+        $I->waitForPageText('Účast byla zrušena', 10);
         $I->see('zrušeno', '[data-test="registration-state"]');
 
         // A new browser (no session) may not see the filled-in data without the code from phase 3.
@@ -213,7 +213,7 @@ final class RegistrationCest
         $I->see('Účast zrušena účastníkem', '[data-test="registration-log"]');
         $I->fillField('input[name="email"]', 'babicka@example.cz');
         $I->click('Přidat e-mail');
-        $I->waitForText('E-mail byl přidán', 10);
+        $I->waitForPageText('E-mail byl přidán', 10);
         $I->see('babicka@example.cz', '[data-test="recipients"]');
         $I->seeElement('[data-test="personal-link"]');
     }
@@ -231,34 +231,34 @@ final class RegistrationCest
         }
         $I->fillField('contactEmail', 'jan.novak@example.cz');
         $I->clickByJs('[data-test="event-submit"]');
-        $I->waitForText('Akce byla založena', 10);
+        $I->waitForPageText('Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
 
         $I->amOnPage('/akce/'.$eventId.'/pole');
         $I->selectOption('type', 'text');
         $I->fillField('label', 'Alergie a léky');
         $I->click('Přidat pole');
-        $I->waitForText('Pole bylo přidáno', 10);
+        $I->waitForPageText('Pole bylo přidáno', 10);
         $I->selectOption('type', 'výběr jedné možnosti');
         $I->fillField('label', 'Doprava');
         $I->fillField('options', "autobus\nvlastní");
         $I->checkOption('required');
         $I->click('Přidat pole');
-        $I->waitForText('Pole bylo přidáno', 10);
+        $I->waitForPageText('Pole bylo přidáno', 10);
         $I->selectOption('type', 'výběr více možností');
         $I->fillField('label', 'Přijede na');
         $I->fillField('options', "pátek\nsobota");
         $I->click('Přidat pole');
-        $I->waitForText('Pole bylo přidáno', 10);
+        $I->waitForPageText('Pole bylo přidáno', 10);
         $I->selectOption('type', 'ano / ne');
         $I->fillField('label', 'Má zdravotní posudek');
         $I->checkOption('required');
         $I->click('Přidat pole');
-        $I->waitForText('Pole bylo přidáno', 10);
+        $I->waitForPageText('Pole bylo přidáno', 10);
 
         $I->amOnPage('/akce/'.$eventId);
         $I->click('Otevřít přihlašování');
-        $I->waitForText('Stav akce byl změněn', 10);
+        $I->waitForPageText('Stav akce byl změněn', 10);
 
         return $eventId;
     }

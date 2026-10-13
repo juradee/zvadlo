@@ -23,10 +23,10 @@ final class PublicRegistrationCest
         $I->selectOption('publicRegistration', 'veřejný odkaz (kdokoli s odkazem)');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
         $I->clickByJs('[data-test="event-submit"]');
-        $I->waitForText('Akce byla založena', 10);
+        $I->waitForPageText('Akce byla založena', 10);
         $eventId = $I->grabFromCurrentUrl('~/akce/(\d+)~');
         $I->click('Otevřít přihlašování');
-        $I->waitForText('Stav akce byl změněn', 10);
+        $I->waitForPageText('Stav akce byl změněn', 10);
         $I->seeElement('[data-test="public-link-box"]');
         // Plain http has no navigator.clipboard; the button must still copy through the legacy command.
         $I->executeJS("Object.defineProperty(navigator, 'clipboard', {value: undefined, configurable: true});");
@@ -86,7 +86,7 @@ final class PublicRegistrationCest
         $I->fillField('reason', 'nepatří k nám');
         $I->executeJS('window.confirm = () => true;');
         $I->click('Zamítnout přihlášku');
-        $I->waitForText('Přihláška byla zamítnuta', 10);
+        $I->waitForPageText('Přihláška byla zamítnuta', 10);
         $I->see('zamítnuto', '[data-test="registration-state"]');
         $I->see('nepatří k nám', '[data-test="registration-log"]');
         $I->dontSee('Kdesi 1');
@@ -110,7 +110,7 @@ final class PublicRegistrationCest
         $I->fillField('contactEmail', 'cizi@example.cz');
         $I->checkOption('agreement');
         $I->click('Odeslat přihlášku');
-        $I->waitForText('Přihlášku pro tuto osobu už evidujeme', 10);
+        $I->waitForPageText('Přihlášku pro tuto osobu už evidujeme', 10);
     }
 
     public function campIsCreatedFromSkautis(AcceptanceTester $I): void
@@ -126,7 +126,7 @@ final class PublicRegistrationCest
         $I->seeElement('input[name="name"][disabled]');
         $I->fillField('contactEmail', 'jan.novak@example.cz');
         $I->click('Založit tábor');
-        $I->waitForText('Tábor byl založen podle skautISu', 10);
+        $I->waitForPageText('Tábor byl založen podle skautISu', 10);
         $I->see('Letní tábor Vlčat', '[data-test="event-name"]');
         $I->see('tábor', '[data-test="event-name"] ~ p .badge');
         $I->see('03.07.2027 – 17.07.2027');
