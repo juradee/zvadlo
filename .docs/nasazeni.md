@@ -38,10 +38,11 @@ a `production`; proměnné a tajemství žijí tam, nikdy v repozitáři.
    `DEPLOY_PREPARE_PORT`, workflow nejprve otevře a nechá zavřít SSH relaci na tomto portu a počká, až je
    dostupný finální `DEPLOY_PORT`.
 3. `deploy.php` vytvoří z proměnných environmentu soubor `.env.local` a `google-credentials.json`
-   (`zvadlo:build_runtime_files`), nahraje je do `shared/`, rsyncem nakopíruje release do `releases/<hash>`,
-   nasdílí `log/`, `uploads/`, `temp/sessions/`, spustí migrace (`migrations:migrate --all-or-nothing`), prohřeje
-   DI kontejner, přepne `current` i web root hostingu (`ln -sfn {{release_path}}/www {{web_root}}`) a ověří
-   přes `/health`, že běží nový release (`APP_RELEASE_HASH` = název release).
+   (`zvadlo:build_runtime_files`), přepne aplikaci do údržby, rsyncem nakopíruje release do `releases/<hash>`,
+   nasdílí `log/`, `uploads/`, `temp/sessions/` a přepne `current` i web root hostingu
+   (`ln -sfn {{release_path}}/www {{web_root}}`). GitHub runner pak přes zabezpečený dočasný endpoint
+   `/db_fix.php` spustí migrace, obnoví běžnou konfiguraci, prohřeje DI kontejner a odstraní endpoint. Nakonec
+   ověří přes `/health`, že běží nový release (`APP_RELEASE_HASH` = název release).
 4. Drží se tři poslední release; návrat zpět je `dep rollback` nebo ruční přepnutí symlinku `current`.
 
 ## Co nastavit v GitHub environmentu
@@ -70,7 +71,8 @@ Proměnné environmentu (`vars`):
 Tajemství (`secrets`): `DEPLOY_SSH_KEY` (privátní klíč deploy účtu), `APP_SECRET` (32 B base64, `openssl rand -base64 32`;
 jeho změna zneplatní uložené Gmail tokeny a osobní odkazy), `DB_PASSWORD`, `GOOGLE_CREDENTIALS`
 (obsah JSON OAuth klienta), `SENTRY_DSN`, `GH_ISSUES_TOKEN`, `HSKAUTING_WEBHOOK_SECRET` (tajemství podpisu
-dávek pro h.skauting, stejné na obou stranách).
+dávek pro h.skauting, stejné na obou stranách) a `DB_FIX_TOKEN_SHA256` (jednorázový 256bitový hexadecimální
+token pro HTTP migraci, vygenerovat `openssl rand -hex 32`).
 
 ## Na serveru
 

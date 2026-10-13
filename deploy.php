@@ -91,6 +91,7 @@ task('zvadlo:build_runtime_files', static function (): void {
         'DB_NAME' => requiredEnv('DB_NAME'),
         'DB_USER' => requiredEnv('DB_USER'),
         'DB_PASSWORD' => requiredEnv('DB_PASSWORD'),
+        'DB_FIX_TOKEN_SHA256' => requiredEnv('DB_FIX_TOKEN_SHA256'),
         'SEND_EMAIL' => optionalEnv('SEND_EMAIL') ?? 'true',
         'GOOGLE_REDIRECT_URI' => optionalEnv('GOOGLE_REDIRECT_URI') ?? $baseUrl.'/google/token',
         'TRACY_SHOW_BAR' => 'false',
@@ -103,20 +104,34 @@ task('zvadlo:build_runtime_files', static function (): void {
     }
 
     file_put_contents($dir.'/.env.local', dotenv($values));
+    $maintenanceValues = $values;
+    $maintenanceValues['MAINTENANCE_MODE'] = 'true';
+    file_put_contents($dir.'/.env.maintenance.local', dotenv($maintenanceValues));
     file_put_contents($dir.'/google-credentials.json', optionalEnv('GOOGLE_CREDENTIALS') ?? '');
     writeln('<info>Runtime files prepared for '.$appEnv.'.</info>');
 });
 
-desc('Upload the runtime files into shared/');
-task('zvadlo:upload_runtime_files', static function (): void {
+desc('Put the application into maintenance and upload its shared runtime files');
+task('zvadlo:upload_maintenance_runtime_files', static function (): void {
     run('mkdir -p {{deploy_path}}/shared/app/config');
-    upload(__DIR__.'/.deployment/.env.local', '{{deploy_path}}/shared/.env.local');
+    upload(__DIR__.'/.deployment/.env.maintenance.local', '{{deploy_path}}/shared/.env.local');
     upload(__DIR__.'/.deployment/google-credentials.json', '{{deploy_path}}/shared/app/config/google-credentials.json');
 });
 
-desc('Run database migrations');
-task('zvadlo:migrate', static function (): void {
-    run('cd {{release_path}} && {{bin/php}} bin/console migrations:migrate --no-interaction --allow-no-migration --all-or-nothing');
+desc('Run database migrations through the temporary HTTP endpoint');
+task('zvadlo:db_fix', static function (): void {
+    $url = rtrim(requiredEnv('APP_BASE_URL'), '/').'/db_fix.php?token='.rawurlencode(requiredEnv('DB_FIX_TOKEN_SHA256'));
+    runLocally('curl --fail --silent --show-error --max-time 300 '.escapeshellarg($url));
+});
+
+desc('Restore the configured runtime settings after a successful migration');
+task('zvadlo:restore_runtime_files', static function (): void {
+    upload(__DIR__.'/.deployment/.env.local', '{{deploy_path}}/shared/.env.local');
+});
+
+desc('Remove the temporary HTTP migration endpoint');
+task('zvadlo:disable_db_fix', static function (): void {
+    run('rm -f {{release_path}}/www/db_fix.php');
 });
 
 desc('Compile the DI container so the first request is fast');
@@ -163,12 +178,14 @@ task('deploy', [
     'deploy:lock',
     'deploy:release',
     'rsync',
-    'zvadlo:upload_runtime_files',
+    'zvadlo:upload_maintenance_runtime_files',
     'deploy:shared',
-    'zvadlo:migrate',
-    'zvadlo:warmup',
     'deploy:symlink',
     'zvadlo:web_root',
+    'zvadlo:db_fix',
+    'zvadlo:restore_runtime_files',
+    'zvadlo:warmup',
+    'zvadlo:disable_db_fix',
     'deploy:unlock',
     'deploy:cleanup',
     'zvadlo:verify',
@@ -176,3 +193,4 @@ task('deploy', [
 ]);
 
 after('deploy:failed', 'deploy:unlock');
+after('deploy:failed', 'zvadlo:disable_db_fix');

@@ -210,8 +210,8 @@ jobs:
           DEPLOY_PREPARE_PORT: ${{ vars.DEPLOY_PREPARE_PORT }}
         run: |
           set -euo pipefail
-          ssh -p "$DEPLOY_PREPARE_PORT" -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" true || \
-            echo 'The preparation SSH session ended as expected.'
+          echo "Opening preparation SSH connection on port $DEPLOY_PREPARE_PORT..."
+          ssh -p "$DEPLOY_PREPARE_PORT" -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" true
 
           for attempt in {1..30}; do
             if ssh -p "$DEPLOY_PORT" -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" true; then
@@ -244,6 +244,7 @@ jobs:
           DB_NAME: ${{ vars.DB_NAME }}
           DB_USER: ${{ vars.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_FIX_TOKEN_SHA256: ${{ secrets.DB_FIX_TOKEN_SHA256 }}
           SEND_EMAIL: ${{ vars.SEND_EMAIL }}
           SYSTEM_EMAIL: ${{ vars.SYSTEM_EMAIL }}
           ERROR_EMAILS: ${{ vars.ERROR_EMAILS }}
