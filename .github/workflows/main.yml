@@ -98,7 +98,7 @@ jobs:
 
       - name: Codeception output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codeception-output
           path: tests/_output
@@ -140,7 +140,7 @@ jobs:
               -czf /tmp/release.tar.gz -C . .
           mv /tmp/release.tar.gz release.tar.gz
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release
           path: release.tar.gz
