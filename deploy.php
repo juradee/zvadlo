@@ -104,7 +104,7 @@ task('zvadlo:build_runtime_files', static function (): void {
         'GOOGLE_REDIRECT_URI' => optionalEnv('GOOGLE_REDIRECT_URI') ?? $baseUrl.'/google/token',
         'TRACY_SHOW_BAR' => 'false',
     ];
-    foreach (['SYSTEM_EMAIL', 'ERROR_EMAILS', 'TEST_BACKGROUND', 'ENVIRONMENT_LABEL', 'ENVIRONMENT_COLOR', 'SENTRY_DSN', 'DB_SERVER_VERSION', 'GITHUB_ISSUES_TOKEN', 'HSKAUTING_WEBHOOK_URL', 'HSKAUTING_WEBHOOK_SECRET', 'ADMIN_USER_IDS', 'RETENTION_MONTHS_SYNCED', 'RETENTION_MONTHS_UNSYNCED', 'MAINTENANCE_MODE', 'MAINTENANCE_ALLOWED_IPS', 'MAINTENANCE_STARTED_AT', 'MAINTENANCE_ENDS_AT'] as $name) {
+    foreach (['SYSTEM_EMAIL', 'ERROR_EMAILS', 'TEST_BACKGROUND', 'ENVIRONMENT_LABEL', 'ENVIRONMENT_COLOR', 'SENTRY_DSN', 'GITHUB_ISSUES_TOKEN', 'HSKAUTING_WEBHOOK_URL', 'HSKAUTING_WEBHOOK_SECRET', 'ADMIN_USER_IDS', 'RETENTION_MONTHS_SYNCED', 'RETENTION_MONTHS_UNSYNCED', 'MAINTENANCE_MODE', 'MAINTENANCE_ALLOWED_IPS', 'MAINTENANCE_STARTED_AT', 'MAINTENANCE_ENDS_AT'] as $name) {
         $value = optionalEnv($name);
         if ($value !== null) {
             $values[$name] = $value;
@@ -142,9 +142,10 @@ task('zvadlo:disable_db_fix', static function (): void {
     run('rm -f {{release_path}}/www/db_fix.php');
 });
 
-desc('Compile the DI container so the first request is fast');
+desc('Compile the DI container through the web so the first request is fast');
 task('zvadlo:warmup', static function (): void {
-    run('cd {{release_path}} && {{bin/php}} bin/console list --quiet');
+    // Over HTTP like db_fix: the hosting CLI cannot reach the database, which DBAL asks for its version on boot.
+    runLocally('curl --fail --silent --show-error --max-time 60 '.escapeshellarg(rtrim(requiredEnv('APP_BASE_URL'), '/').'/health'));
 });
 
 desc('Verify release symlinks and point the web root of the hosting at the new release');

@@ -100,7 +100,6 @@ rs/
 | `SKAUTIS_TEST_MODE` | testovací skautIS | `true` mimo `prod` |
 | `SKAUTIS_FIXTURES` | cesta k JSON fixturám místo SOAP (fixture továrna balíčku) | `tests/fixtures/skautis` v `ci`, jinak prázdné |
 | `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | databáze | dockerové hodnoty |
-| `DB_SERVER_VERSION` | verze databázového serveru pro Doctrine; prázdné = zjistí se připojením | prázdné |
 | `SEND_EMAIL` | `true` = Gmail API a sendmail; `false` = vše přes SMTP do mailcatcheru | `false` v `dev`/`ci` |
 | `MAIL_SMTP_HOST`, `MAIL_SMTP_PORT` | mailcatcher pro `SEND_EMAIL=false` | `mailpit`, `1025` |
 | `SYSTEM_EMAIL` | odesílatel systémové pošty přes sendmail (hlášení chyb, odpovědi správců) | `noreply@<host APP_BASE_URL>` |

@@ -92,7 +92,6 @@ final class Environment
                 'name' => self::string('DB_NAME', 'zvadlo'),
                 'user' => self::string('DB_USER', 'zvadlo'),
                 'password' => self::string('DB_PASSWORD', 'zvadlo'),
-                'serverVersion' => self::nullableString('DB_SERVER_VERSION'),
             ],
             'skautis' => [
                 'applicationId' => self::string('APPLICATION_ID'),

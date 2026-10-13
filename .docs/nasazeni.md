@@ -41,7 +41,8 @@ a `production`; proměnné a tajemství žijí tam, nikdy v repozitáři.
    (`zvadlo:build_runtime_files`), přepne aplikaci do údržby, rsyncem nakopíruje release do `releases/<hash>`,
    nasdílí `log/`, `uploads/`, `temp/sessions/` a přepne `current` i web root hostingu
    (`ln -sfn {{release_path}}/www {{web_root}}`). GitHub runner pak přes zabezpečený dočasný endpoint
-   `/db_fix.php` spustí migrace, obnoví běžnou konfiguraci, prohřeje DI kontejner a odstraní endpoint. Nakonec
+   `/db_fix.php` spustí migrace, obnoví běžnou konfiguraci, prohřeje DI kontejner dotazem na `/health` (CLI na hostingu se k databázi
+   nepřipojí) a odstraní endpoint. Nakonec
    ověří přes `/health`, že běží nový release (`APP_RELEASE_HASH` = název release).
 4. Drží se tři poslední release; návrat zpět je `dep rollback` nebo ruční přepnutí symlinku `current`.
 
@@ -64,7 +65,6 @@ Proměnné environmentu (`vars`):
 | `APPLICATION_ID` | skautIS AppID daného prostředí; není tajné, skautIS ho posílá jako parametr `appid` v URL přihlášení |
 | `TEST_BACKGROUND`, `ENVIRONMENT_LABEL`, `ENVIRONMENT_COLOR` | banner prostředí (na produkci `TEST_BACKGROUND=false`) |
 | `DB_HOST`, `DB_NAME`, `DB_USER` | databáze |
-| `DB_SERVER_VERSION` | verze databázového serveru pro Doctrine (`SELECT VERSION()`, např. `8.0.39`); bez ní se Doctrine při startu připojuje k serveru, což na hostingu z příkazové řádky nemusí jít |
 | `GOOGLE_REDIRECT_URI`, `ADMIN_USER_IDS`, `RETENTION_MONTHS_SYNCED`, `RETENTION_MONTHS_UNSYNCED` | volitelné |
 | `HSKAUTING_WEBHOOK_URL` | endpoint h.skautingu daného prostředí pro push propsaných akcí; prázdné = push vypnutý |
 | `MAINTENANCE_MODE`, `MAINTENANCE_ALLOWED_IPS`, `MAINTENANCE_STARTED_AT`, `MAINTENANCE_ENDS_AT` | režim údržby (níže) |
