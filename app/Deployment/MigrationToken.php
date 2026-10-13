@@ -19,6 +19,6 @@ final class MigrationToken
             && ctype_xdigit($configuredToken)
             && \strlen($providedToken) === 64
             && ctype_xdigit($providedToken)
-            && hash_equals(\strtolower($configuredToken), \strtolower($providedToken));
+            && hash_equals(strtolower($configuredToken), strtolower($providedToken));
     }
 }
