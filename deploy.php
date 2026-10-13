@@ -80,6 +80,11 @@ task('zvadlo:build_runtime_files', static function (): void {
 
     $appEnv = requiredEnv('APP_ENV');
     $baseUrl = rtrim(requiredEnv('APP_BASE_URL'), '/');
+    $dbFixToken = requiredEnv('DB_FIX_TOKEN_SHA256');
+    if (\strlen($dbFixToken) !== 64 || ! ctype_xdigit($dbFixToken)) {
+        throw new \RuntimeException('Deploy variable "DB_FIX_TOKEN_SHA256" must be a 64-character hexadecimal token.');
+    }
+
     $values = [
         'APP_ENV' => $appEnv,
         'APP_BASE_URL' => $baseUrl,
@@ -91,7 +96,7 @@ task('zvadlo:build_runtime_files', static function (): void {
         'DB_NAME' => requiredEnv('DB_NAME'),
         'DB_USER' => requiredEnv('DB_USER'),
         'DB_PASSWORD' => requiredEnv('DB_PASSWORD'),
-        'DB_FIX_TOKEN_SHA256' => requiredEnv('DB_FIX_TOKEN_SHA256'),
+        'DB_FIX_TOKEN_SHA256' => $dbFixToken,
         'SEND_EMAIL' => optionalEnv('SEND_EMAIL') ?? 'true',
         'GOOGLE_REDIRECT_URI' => optionalEnv('GOOGLE_REDIRECT_URI') ?? $baseUrl.'/google/token',
         'TRACY_SHOW_BAR' => 'false',
