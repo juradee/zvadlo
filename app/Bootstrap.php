@@ -38,6 +38,10 @@ final class Bootstrap
         if (is_file($environmentConfig)) {
             $configurator->addConfig($environmentConfig);
         }
+        // Without it DBAL connects on boot to ask the server; the hosting CLI cannot always reach the database.
+        if ($environment['database']['serverVersion'] !== null) {
+            $configurator->addConfig(['dbal' => ['connections' => ['default' => ['serverVersion' => $environment['database']['serverVersion']]]]]);
+        }
 
         return $configurator;
     }
