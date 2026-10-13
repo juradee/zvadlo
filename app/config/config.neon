@@ -27,6 +27,8 @@ parameters:
 
 php:
     date.timezone: Europe/Prague
+    # The hosting's php.ini sets the redis handler, which reads savePath below as a Redis address.
+    session.save_handler: files
 
 session:
     autoStart: smart
