@@ -15,7 +15,6 @@ dbal:
             user: %database.user%
             password: %database.password%
             charset: utf8mb4
-            serverVersion: mariadb-11.4.0
             defaultTableOptions:
                 charset: utf8mb4
                 collation: utf8mb4_czech_ci
