@@ -93,7 +93,7 @@ rs/
 | Proměnná | Význam | Výchozí |
 |---|---|---|
 | `APP_ENV` | `dev` / `ci` / `beta` / `test` / `prod` | `dev` |
-| `APP_BASE_URL` | veřejná adresa instance | `http://moje-hospodareni.cz` do vyřízení vlastního AppID, potom vlastní dev doména |
+| `APP_BASE_URL` | veřejná adresa instance | `http://moje-zvadlo.cz` do vyřízení vlastního AppID, potom vlastní dev doména |
 | `APP_SECRET` | klíč pro šifrování refresh tokenů (32 B, base64) | povinné mimo `dev` |
 | `APP_RELEASE_HASH` | verze pro Sentry a hlášení chyb | `dev` |
 | `APPLICATION_ID` | skautIS AppID (veřejný identifikátor, parametr `appid` v URL přihlášení) | povinné |
@@ -117,12 +117,12 @@ rs/
 
 ### Docker a Makefile
 
-Služby: `traefik` (dev doména z proměnné `DEV_HOST`, zatím `moje-hospodareni.cz` → nginx), `php` (oficiální
+Služby: `traefik` (dev doména z proměnné `DEV_HOST`, zatím `moje-zvadlo.cz` → nginx), `php` (oficiální
 `php:8.4-fpm` + Composer), `php-test` (`APP_ENV=ci`, stejný obraz; proměnná `PHP_VERSION` přepne na 8.5),
 `node` (`node:24`, jen pro `npm` a Vite; na hostiteli Node není), `nginx`, `mariadb`, `mariadb-test` (tmpfs),
 `mailpit` (UI `mail.localhost`), `selenium`, `adminer`.
 Dokud Zvadlo sdílí doménu a AppID s h.skautingem, nemohou oba stacky běžet na portu 80 zároveň; skautIS
-posílá POST na `moje-hospodareni.cz`, takže při ladění přihlášení musí být stack h.skautingu zastavený
+posílá POST na `moje-zvadlo.cz`, takže při ladění přihlášení musí být stack h.skautingu zastavený
 (`TRAEFIK_HOST_PORT` jiný port nepomůže, skautIS o něm neví). Makefile s cíli
 `build`, `up`, `down`, `init`, `enter`, `composer-install`, `fixtures`, `assets`, `assets-watch`,
 `test-unit`, `test-integration`, `test-acceptance`, `ci-acceptance`, `check-cs`, `check-cs-check`,

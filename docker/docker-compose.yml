@@ -42,7 +42,7 @@ services:
         networks:
             default:
                 aliases:
-                    - ${DEV_HOST:-moje-hospodareni.cz}
+                    - ${DEV_HOST:-moje-zvadlo.cz}
         labels:
             traefik.enable: true
             traefik.http.routers.traefik.rule: Host(`traefik.localhost`)
@@ -98,7 +98,7 @@ services:
             - php-test
         labels:
             traefik.enable: true
-            traefik.http.routers.app.rule: Host(`${DEV_HOST:-moje-hospodareni.cz}`)
+            traefik.http.routers.app.rule: Host(`${DEV_HOST:-moje-zvadlo.cz}`)
             traefik.http.routers.app.entrypoints: web
             traefik.http.services.app.loadbalancer.server.port: 80
 

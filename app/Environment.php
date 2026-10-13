@@ -65,7 +65,7 @@ final class Environment
     /** @return array<string, mixed> */
     private static function build(string $projectDir, string $appEnv): array
     {
-        $baseUrl = rtrim(self::string('APP_BASE_URL', 'http://moje-hospodareni.cz'), '/');
+        $baseUrl = rtrim(self::string('APP_BASE_URL', 'http://moje-zvadlo.cz'), '/');
         $host = parse_url($baseUrl, \PHP_URL_HOST);
         $fixtures = self::nullableString('SKAUTIS_FIXTURES');
 

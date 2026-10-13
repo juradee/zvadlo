@@ -13,7 +13,7 @@ services:
         networks:
             default:
                 aliases: !override
-                    - moje-hospodareni.cz
+                    - moje-zvadlo.cz
 
     php:
         build:
@@ -47,7 +47,7 @@ services:
             - ci-tests-output:/app/tests/_output
             - ci-tests-generated:/app/tests/_support/_generated
         environment:
-            APP_BASE_URL: http://moje-hospodareni.cz
+            APP_BASE_URL: http://moje-zvadlo.cz
 
     nginx:
         image: ${COMPOSE_PROJECT_NAME:-zvadlo}-nginx-ci
@@ -60,4 +60,4 @@ services:
         depends_on: !override
             - php-test
         labels:
-            traefik.http.routers.app.rule: Host(`moje-hospodareni.cz`)
+            traefik.http.routers.app.rule: Host(`moje-zvadlo.cz`)

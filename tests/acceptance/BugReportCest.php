@@ -20,7 +20,7 @@ final class BugReportCest
         $I->seeElement('[data-test="nav-admin"]');
         $I->click('[data-test="footer-bug-report-link"]');
         $I->see('Nahlásit problém', 'h1');
-        $I->seeInField('url', 'http://moje-hospodareni.cz/prehled');
+        $I->seeInField('url', 'http://moje-zvadlo.cz/prehled');
         $I->see('jan.novak@example.cz');
         $I->fillField('description', 'Po kliknutí na Uložit se stránka jen znovu načte a nic se neuloží.');
         $I->attachFile('screenshot', 'screenshot.png');

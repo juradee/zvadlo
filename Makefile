@@ -31,7 +31,7 @@ RUN_NODE     = $(COMPOSE) run --rm -T $(DOCKER_USER) node
 APP_SERVICES  = traefik php scheduler nginx mariadb mailpit adminer
 TEST_SERVICES = mariadb-test mailpit php-test
 ACCEPTANCE_SERVICES = traefik mariadb-test mailpit selenium nginx php-test
-ACCEPTANCE_BASE_URL ?= http://moje-hospodareni.cz
+ACCEPTANCE_BASE_URL ?= http://moje-zvadlo.cz
 
 TEST ?=
 

@@ -731,7 +731,7 @@ Prostředí se přepíná proměnnou `APP_ENV`, stejně jako v h.skautingu:
 
 | `APP_ENV` | Kde | skautIS | Banner v liště |
 |---|---|---|---|
-| `dev` | lokální docker; do vyřízení vlastního AppID doména `moje-hospodareni.cz` a AppID h.skautingu | testovací (`test-is.skaut.cz`) | „Vývojový server“ |
+| `dev` | lokální docker; do vyřízení vlastního AppID doména `moje-zvadlo.cz` a AppID h.skautingu | testovací (`test-is.skaut.cz`) | „Vývojový server“ |
 | `ci` | GitHub Actions, testy | falešný klient z fixtur | – |
 | `beta` | beta.zvadlo.skauting.cz, větve `beta/**` | testovací | „Beta server“ (modrý) |
 | `test` | test.zvadlo.skauting.cz, `master` | testovací | „Testovací server“ (žlutý) |
@@ -909,7 +909,7 @@ skautIS). Otevřené body jsou označené *(ověřit)*.
 |---|---|---|
 | 1 | Název | **Zvadlo**, zvadlo.skauting.cz |
 | 2 | Hosting a nasazení | stejné jako h.skauting: sdílený hosting www.skauting.cz, Deployer, migrace přes HTTP `db_fix.php`, plánovač přes cron |
-| 3 | skautIS AppID a dev doména | registraci a doménu zařídí zadavatel; do té doby vývoj na `moje-hospodareni.cz` s AppID h.skautingu (`rs/.env.local`) |
+| 3 | skautIS AppID a dev doména | registraci a doménu zařídí zadavatel; do té doby vývoj na `moje-zvadlo.cz` s AppID h.skautingu (`rs/.env.local`) |
 | 4 | Odesílání e-mailů akce | jen z Gmail účtu jednotky jako v h.skautingu, bez náhradního odesílatele; `Reply-To` je kontaktní osoba z nastavení akce; systémová pošta sendmailem (viz 8.2) |
 | 5 | Tábory | zakládají se ve skautISu; Zvadlo propisuje účastníky, jakmile je tábor odevzdaný ke schválení; schválení střediskem není podmínkou *(ověřit přesný stav)* |
 | 6 | Kapacita | ano, včetně volitelné čekací listiny; kapacita je nepovinná, bez ní je akce bez omezení (podrobnosti 5.3, rozhodnutí 36) |

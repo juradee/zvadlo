@@ -8,7 +8,7 @@ v kontejnerech.
 Dokud Zvadlo nemá vlastní skautIS AppID, používá doménu a AppID h.skautingu. Do `/etc/hosts` patří:
 
 ```
-127.0.0.1   moje-hospodareni.cz
+127.0.0.1   moje-zvadlo.cz
 ```
 
 skautIS po přihlášení posílá POST na adresu registrovanou u AppID (`/sign/skaut-i-s`), takže při ladění
@@ -23,7 +23,7 @@ make up        # start stacku
 
 | Adresa | Co |
 |---|---|
-| http://moje-hospodareni.cz | aplikace |
+| http://moje-zvadlo.cz | aplikace |
 | http://mail.localhost | Mailpit, veškerá odchozí pošta ve vývoji |
 | http://adminer.localhost | databáze (server `mariadb`, uživatel a heslo `zvadlo`) |
 | http://traefik.localhost | Traefik dashboard |
@@ -97,8 +97,8 @@ skautIS (viz `tests/Support/Helper/Acceptance.php`).
 
 ## PWA lokálně
 
-Service worker běží jen v bezpečném kontextu a `http://moje-hospodareni.cz` jím není. Pro ruční zkoušení v Chrome
-zapněte `chrome://flags/#unsafely-treat-insecure-origin-as-secure` s hodnotou `http://moje-hospodareni.cz`
+Service worker běží jen v bezpečném kontextu a `http://moje-zvadlo.cz` jím není. Pro ruční zkoušení v Chrome
+zapněte `chrome://flags/#unsafely-treat-insecure-origin-as-secure` s hodnotou `http://moje-zvadlo.cz`
 (Selenium v testech má stejný přepínač v `tests/acceptance.suite.yml`). Po `make assets` je worker na `/sw.js`,
 manifest na `/manifest.webmanifest`, offline stránka na `/offline`; uloženou kopii seznamu přihlášených otevřete
 i online přes `?offline=1`. `make check-types` zkontroluje TypeScript aplikace i workeru.

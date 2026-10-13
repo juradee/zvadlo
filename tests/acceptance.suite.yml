@@ -14,7 +14,7 @@ modules:
                           - '--disable-gpu'
                           - '--no-sandbox'
                           - '--lang=cs'
-                          - '--unsafely-treat-insecure-origin-as-secure=http://moje-hospodareni.cz'
+                          - '--unsafely-treat-insecure-origin-as-secure=http://moje-zvadlo.cz'
         - App\Tests\Support\Helper\Acceptance
         - App\Tests\Support\Helper\NetteContainer
         - Db:
@@ -26,7 +26,7 @@ env:
         modules:
             config:
                 WebDriver:
-                    url: 'http://moje-hospodareni.cz'
+                    url: 'http://moje-zvadlo.cz'
                     capabilities:
                         goog:chromeOptions:
                             args:
@@ -34,7 +34,7 @@ env:
                                 - '--disable-gpu'
                                 - '--no-sandbox'
                                 - '--lang=cs'
-                                - '--unsafely-treat-insecure-origin-as-secure=http://moje-hospodareni.cz'
+                                - '--unsafely-treat-insecure-origin-as-secure=http://moje-zvadlo.cz'
     mobile:
         modules:
             config:
@@ -47,4 +47,4 @@ env:
                                 - '--disable-gpu'
                                 - '--no-sandbox'
                                 - '--lang=cs'
-                                - '--unsafely-treat-insecure-origin-as-secure=http://moje-hospodareni.cz'
+                                - '--unsafely-treat-insecure-origin-as-secure=http://moje-zvadlo.cz'

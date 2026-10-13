@@ -14,10 +14,19 @@ final class EnvironmentTest extends Unit
     /** APP_ENV of the real environment wins over the files, so the test follows it. */
     private string $appEnv;
 
+    /** APP_BASE_URL of the real environment wins over the files, so the test follows it. */
+    private string $appBaseUrl;
+
+    private string $systemEmail;
+
     protected function _before(): void
     {
         $env = getenv('APP_ENV');
         $this->appEnv = \is_string($env) && $env !== '' ? $env : 'test';
+        $baseUrl = getenv('APP_BASE_URL');
+        $this->appBaseUrl = rtrim(\is_string($baseUrl) && $baseUrl !== '' ? $baseUrl : 'https://example.cz/', '/');
+        $host = parse_url($this->appBaseUrl, \PHP_URL_HOST);
+        $this->systemEmail = 'noreply@'.(\is_string($host) ? $host : 'localhost');
         $this->dir = sys_get_temp_dir().'/zvadlo-env-'.uniqid();
         mkdir($this->dir);
         file_put_contents($this->dir.'/.env', implode("\n", [
@@ -38,13 +47,13 @@ final class EnvironmentTest extends Unit
         $config = Environment::getConfiguration();
 
         self::assertSame($this->appEnv, $config['appEnv']);
-        self::assertSame('https://example.cz', $config['appBaseUrl']);
+        self::assertSame($this->appBaseUrl, $config['appBaseUrl']);
         self::assertSame(['a@example.cz', 'b@example.cz'], $config['errorEmails']);
         self::assertTrue($config['sendEmail']);
         self::assertSame('Testovací server', $config['environmentLabel']);
         self::assertFalse($config['tracyShowBar']);
         self::assertSame(6, $config['retentionMonths']['synced']);
-        self::assertSame('noreply@example.cz', $config['systemEmail']);
+        self::assertSame($this->systemEmail, $config['systemEmail']);
     }
 
     public function testSecondLoadCanOverrideValuesSetByTheFirst(): void

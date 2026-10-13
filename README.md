@@ -10,8 +10,8 @@ make init
 make up
 ```
 
-Aplikace běží na http://moje-hospodareni.cz (dočasně sdílená doména s h.skautingem, viz
-[instalace](.docs/instalace.md)). `make help` vypíše všechny cíle, `make ci` spustí totéž co GitHub Actions.
+Rezerví adresa aplikace je  http://moje-zvadlo.cz , adresu jde uvést v hosts. Testovací appId směřuje na tuto doménu. 
+Viz [instalace](.docs/instalace.md)). `make help` vypíše všechny cíle, `make ci` spustí totéž co GitHub Actions.
 
 ## Dokumentace
 
