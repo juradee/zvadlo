@@ -66,6 +66,19 @@ final class MailingCest
         $I->click('[data-test="nav-unit"]');
         $I->see('Nastavení jednotky', 'h1');
         $I->seeElement('[data-test="google-not-configured"]');
+
+        // Account ids are UUIDs with dashes, which a component name must not contain.
+        $I->haveInDatabase('google_oauth', [
+            'id' => '0f0f0f0f-1111-4222-8333-444444444444',
+            'unit_id' => 1003,
+            'email' => 'odebrat@example.cz',
+            'refresh_token_encrypted' => 'x',
+            'updated_at' => '2026-10-14 10:00:00',
+        ]);
+        $I->reloadPage();
+        $I->see('odebrat@example.cz', '[data-test="mail-accounts"]');
+        $I->clickAndAcceptPopupAndWaitForPageText('//li[contains(., "odebrat@example.cz")]//*[@data-test="remove-account"]', 'Účet byl odebrán', 10);
+        $I->dontSee('odebrat@example.cz', '[data-test="mail-accounts"]');
         $I->fillField('agreementText', 'Souhlasím s účastí a pravidly oddílu.');
         $I->clickAndWaitForPageText('Uložit nastavení', 'Nastavení jednotky bylo uloženo', 10);
         $I->seeInField('agreementText', 'Souhlasím s účastí a pravidly oddílu.');

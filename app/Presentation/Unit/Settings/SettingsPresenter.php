@@ -7,7 +7,6 @@ namespace App\Presentation\Unit\Settings;
 use App\Model\Mailing\EmailTemplate;
 use App\Model\Mailing\EmailType;
 use App\Model\Mailing\GoogleAccounts;
-use App\Model\Mailing\GoogleOAuth;
 use App\Model\Mailing\GoogleOAuthRepository;
 use App\Model\Mailing\TemplateRenderer;
 use App\Model\Mailing\UnitEmailTemplateRepository;
@@ -155,16 +154,19 @@ final class SettingsPresenter extends SecuredPresenter
      */
     protected function createComponentRemoveAccount(): Multiplier
     {
-        return new Multiplier(function (string $accountId): Form {
+        // The key is the account UUID without dashes: '-' separates component names.
+        return new Multiplier(function (string $key): Form {
             $form = $this->forms->create();
             $form->addSubmit('remove', 'Odebrat')
                 ->setOption('class', 'btn btn-sm btn-outline-danger')
+                ->setHtmlAttribute('data-test', 'remove-account')
                 ->setHtmlAttribute('data-confirm', 'Odebrat účet? Akce, které z něj posílají, budou potřebovat jiný účet.');
-            $form->onSuccess[] = function () use ($accountId): void {
-                $account = $this->accounts->find($accountId);
-                if ($account instanceof GoogleOAuth && $account->getUnitId() === $this->requireUnitId()) {
-                    $this->google->remove($account);
-                    $this->flashMessage('Účet byl odebrán.', 'success');
+            $form->onSuccess[] = function () use ($key): void {
+                foreach ($this->accounts->findByUnits([$this->requireUnitId()]) as $account) {
+                    if (str_replace('-', '', $account->getId()) === $key) {
+                        $this->google->remove($account);
+                        $this->flashMessage('Účet byl odebrán.', 'success');
+                    }
                 }
                 $this->redirect('this');
             };
