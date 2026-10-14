@@ -84,7 +84,7 @@ final class LoginCest
         $I->seeElement('[data-test="logout-timer"]');
     }
 
-        public function logoutReturnFromSkautisEndsTheSession(AcceptanceTester $I): void
+    public function logoutReturnFromSkautisEndsTheSession(AcceptanceTester $I): void
     {
         $I->loginAsFixtureUser();
 
