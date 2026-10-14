@@ -29,7 +29,15 @@
                     <li class="nav-item"><a class="nav-link" n:href=":Unit:Settings:default" data-test="nav-unit">Jednotka</a></li>
                     <li n:if="$canAccessAdministration" class="nav-item"><a class="nav-link" n:href=":Admin:Dashboard:default" data-test="nav-admin">Administrace</a></li>
                     <li class="nav-item"><a class="nav-link" n:href=":Help:default" data-test="nav-help">Nápověda</a></li>
-                    <li class="nav-item"><span class="nav-link text-body-secondary" data-test="current-role">{$user->getIdentity()->role->displayName} <span class="badge text-bg-light border" data-logout-timer="30" data-test="logout-timer" title="Do odhlášení zbývá 30 min">30 min</span></span></li>
+                    <li class="nav-item ms-lg-4">
+                        {* Between md and xl the full role name would wrap the bar: the unit number stands in for it, the name moves to a tooltip and the timer goes. *}
+                        <span class="nav-link text-body-secondary d-flex align-items-center gap-1" data-test="current-role" data-role-tooltip data-bs-title="{$user->getIdentity()->role->displayName}">
+                            <span class="d-md-none d-xl-inline" data-role-name>{$user->getIdentity()->role->displayName}</span>
+                            <span class="d-none d-md-inline d-xl-none" data-test="current-role-short">{$user->getIdentity()->role->unitRegistrationNumber}</span>
+                            <button n:if="$canSwitchRole" type="button" class="link-secondary bg-transparent border-0 p-1 lh-1" data-bs-toggle="modal" data-bs-target="#role-switch-modal" aria-label="Změnit roli ({$user->getIdentity()->role->displayName})" data-test="role-switch-open"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="d-block" aria-hidden="true"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/></svg></button>
+                            <span class="badge text-bg-light border d-md-none d-xl-inline-block" data-logout-timer="30" data-test="logout-timer" title="Do odhlášení zbývá 30 min">30 min</span>
+                        </span>
+                    </li>
                     <li class="nav-item"><a class="nav-link" n:href=":Auth:out" data-test="logout-link">Odhlásit</a></li>
                 {else}
                     <li class="nav-item"><a class="nav-link" n:href=":Auth:in">Přihlásit</a></li>
@@ -38,6 +46,37 @@
         </div>
     </div>
 </nav>
+
+<div n:if="$canSwitchRole" class="modal fade" id="role-switch-modal" tabindex="-1" aria-labelledby="role-switch-modal-title" aria-hidden="true" data-test="role-switch-modal">
+    <div class="modal-dialog">
+        <form n:name="roleSwitchForm" class="modal-content" data-test="role-switch-form">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="role-switch-modal-title">Role a přihlášení</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+            </div>
+            <div class="modal-body">
+                <label n:name="role" class="form-label">{$form['role']->getCaption()}</label>
+                <select n:name="role" class="form-select" data-test="role-switch-select"></select>
+                <div class="form-check mt-3">
+                    <input n:name="remember" class="form-check-input" data-test="remember-role">
+                    <label n:name="remember" class="form-check-label">{$form['remember']->getCaption()}</label>
+                </div>
+                <div class="form-check">
+                    <input n:name="extend" class="form-check-input" data-test="extend-login">
+                    <label n:name="extend" class="form-check-label">{$form['extend']->getCaption()}</label>
+                </div>
+                <div class="alert alert-warning small mt-3 mb-0">
+                    Po přepnutí se tato stránka načte znovu v nové roli. <strong>Neuložené změny na stránce se ztratí.</strong>
+                    Pokud nová role k této stránce nemá přístup, stránka se nezobrazí.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
+                <button n:name="switch" class="btn btn-primary" data-test="role-switch-confirm">Uložit</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <main class="container py-3">
     {* Hidden by the attribute: no display utility on these elements, it would override [hidden]. *}

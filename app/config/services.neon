@@ -71,6 +71,7 @@ services:
     - App\Model\User\LoginService
     - App\Model\Auth\Authorizator
     - App\Presentation\Accessory\Form\FormFactory
+    - App\Presentation\Accessory\RoleSwitchFormFactory
     - App\Presentation\Web\RegistrationFormBuilder
 
     - App\Presentation\Accessory\EnvironmentInfo(%appEnv%, %testBackground%, %environmentLabel%, %environmentColor%, %releaseHash%, %maintenance.enabled%)

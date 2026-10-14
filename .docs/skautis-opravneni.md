@@ -14,7 +14,7 @@ prázdné pole znamená, že název akce zatím neznáme.
 | Položka | Hodnota |
 |---|---|
 | návratová adresa po přihlášení | `{APP_BASE_URL}/login` (skautIS sem posílá POST s tokenem; stačí jedna pro vedoucí i účastníky, cílovou stránku nese `ReturnUrl`) |
-| návratová adresa po odhlášení | `{APP_BASE_URL}/sign/skautis-logout` |
+| návratová adresa po odhlášení | `{APP_BASE_URL}/logout` (starší `{APP_BASE_URL}/sign/skautis-logout` funguje dál pro testovací a vývojová AppID) |
 | přístup | vedoucí pod svou rolí v jednotce; účastník (člen nebo rodič, i bez funkce v jednotce) jen při přihlášení na akci přes skautIS |
 
 ## UserManagement

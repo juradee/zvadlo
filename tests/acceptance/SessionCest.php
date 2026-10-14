@@ -22,9 +22,9 @@ final class SessionCest
         $response = (string) $I->executeAsyncJS("const done = arguments[0]; fetch('/session/keep-alive', {method: 'POST', credentials: 'same-origin', headers: {'X-Requested-With': 'XMLHttpRequest'}}).then(r => r.text().then(t => done(r.status + ' ' + t)));");
         $I->assertSame('200 {"ok":true}', $response);
 
-        $I->seeCheckboxIsChecked('[data-test="remember-role"]');
-        $I->selectOption('[data-test="role-select"]', 'Činovník: Středisko Sluneční hodiny');
-        $I->clickAndWaitForPageText('[data-test="role-switch"]', 'Role byla přepnuta.', 10);
+        $I->switchRoleInNavigation('Činovník: Středisko Sluneční hodiny', static function () use ($I): void {
+            $I->seeCheckboxIsChecked('[data-test="remember-role"]');
+        });
         $I->see('Činovník', '[data-test="current-role"]');
 
         // skautIS hands over the troop leader role again; Zvadlo restores the remembered one.
@@ -33,10 +33,10 @@ final class SessionCest
         $I->amOnPage('/prehled');
         $I->see('Činovník', '[data-test="current-role"]');
 
-        $I->uncheckOption('[data-test="remember-role"]');
-        $I->uncheckOption('[data-test="extend-login"]');
-        $I->selectOption('[data-test="role-select"]', 'Vedoucí oddílu: 3. oddíl Vlčata');
-        $I->clickAndWaitForPageText('[data-test="role-switch"]', 'Role byla přepnuta.', 10);
+        $I->switchRoleInNavigation('Vedoucí oddílu: 3. oddíl Vlčata', static function () use ($I): void {
+            $I->uncheckOption('[data-test="remember-role"]');
+            $I->uncheckOption('[data-test="extend-login"]');
+        });
         $I->dontSeeElement('body[data-session-keep-alive-url]');
 
         $I->amOnPage('/sign/skautis-logout');

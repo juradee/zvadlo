@@ -114,8 +114,7 @@ final class EventCest
         $I->waitForElementVisible('input[name="lockNoticeDays"]', 5);
 
         $I->amOnPage('/prehled');
-        $I->selectOption('[data-test="role-select"]', 'Činovník: Středisko Sluneční hodiny');
-        $I->clickAndWaitForPageText('[data-test="role-switch"]', 'Role byla přepnuta.', 10);
+        $I->switchRoleInNavigation('Činovník: Středisko Sluneční hodiny');
 
         $I->amOnPage('/akce/'.$eventId);
         $I->see('Střediskový sněm', '[data-test="event-name"]');

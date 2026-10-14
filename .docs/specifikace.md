@@ -885,7 +885,7 @@ Proto:
   a **poslední zobrazený seznam přihlášených** každé akce (`/akce/<id>/prihlasky`, jen odpověď 200 bez
   přesměrování na přihlášení). Bez připojení worker vrátí uloženou kopii označenou žlutým pruhem „Zobrazena
   uložená kopie z dd.mm.rrrr HH:mm“, jinak offline stránku se seznamem uložených kopií; kopii lze otevřít
-  i záměrně přes `?offline=1`. Odhlášení (`/sign/out`, `/sign/skautis-logout`) uložené seznamy smaže.
+  i záměrně přes `?offline=1`. Odhlášení (`/sign/out`, `/logout`, `/sign/skautis-logout`) uložené seznamy smaže.
   Vzorem byl skautIS mobil (`PwaController`, `public/sw.js`).
 - Veřejné stránky pro rodiče PWA nepotřebují; zůstávají obyčejným webem.
 

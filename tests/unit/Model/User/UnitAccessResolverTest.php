@@ -29,7 +29,7 @@ final class UnitAccessResolverTest extends UnitTestCase
 
     public function testUnitLeaderEditsTheWholeTree(): void
     {
-        $access = $this->resolver->resolve(new SkautisRole(11, 'vedouciStredisko', 'Vedoucí střediska', 1002, 'Středisko', 'display'));
+        $access = $this->resolver->resolve(new SkautisRole(11, 'vedouciStredisko', 'Vedoucí střediska', 1002, 'Středisko', 'display', '622.01'));
 
         self::assertSame([1002, 1003, 1004], array_keys($access->read));
         self::assertSame([1002, 1003, 1004], array_keys($access->edit));
@@ -38,7 +38,7 @@ final class UnitAccessResolverTest extends UnitTestCase
 
     public function testTroopLeaderEditsOnlyTheTroop(): void
     {
-        $access = $this->resolver->resolve(new SkautisRole(10, 'vedouciOddil', 'Vedoucí oddílu', 1003, 'Oddíl', 'display'));
+        $access = $this->resolver->resolve(new SkautisRole(10, 'vedouciOddil', 'Vedoucí oddílu', 1003, 'Oddíl', 'display', '622.01'));
 
         self::assertSame([1003], array_keys($access->edit));
         self::assertFalse($access->canEdit(1002));
@@ -46,7 +46,7 @@ final class UnitAccessResolverTest extends UnitTestCase
 
     public function testOfficerOnlyReads(): void
     {
-        $access = $this->resolver->resolve(new SkautisRole(12, 'cinovnikStredisko', 'Činovník', 1002, 'Středisko', 'display'));
+        $access = $this->resolver->resolve(new SkautisRole(12, 'cinovnikStredisko', 'Činovník', 1002, 'Středisko', 'display', '622.01'));
 
         self::assertSame([1002, 1003, 1004], array_keys($access->read));
         self::assertSame([], $access->edit);
@@ -54,7 +54,7 @@ final class UnitAccessResolverTest extends UnitTestCase
 
     public function testOtherRolesGetNothing(): void
     {
-        $access = $this->resolver->resolve(new SkautisRole(13, 'clenOddil', 'Člen', 1003, 'Oddíl', 'display'));
+        $access = $this->resolver->resolve(new SkautisRole(13, 'clenOddil', 'Člen', 1003, 'Oddíl', 'display', '622.01'));
 
         self::assertSame([], $access->read);
         self::assertSame([], $access->edit);
@@ -66,7 +66,7 @@ final class UnitAccessResolverTest extends UnitTestCase
         $gateway->expects(self::exactly(3))->method('getUnit')->willReturnCallback(fn (int $id): Unit => $this->unit($id));
         $gateway->expects(self::exactly(3))->method('getChildUnits')->willReturnCallback(fn (int $id): array => $id === 1002 ? [$this->unit(1003), $this->unit(1004)] : []);
         $resolver = new UnitAccessResolver($gateway, new MemoryStorage());
-        $role = new SkautisRole(11, 'vedouciStredisko', 'Vedoucí střediska', 1002, 'Středisko', 'display');
+        $role = new SkautisRole(11, 'vedouciStredisko', 'Vedoucí střediska', 1002, 'Středisko', 'display', '622.01');
 
         $resolver->resolve($role);
         $resolver->resolve($role);

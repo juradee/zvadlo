@@ -14,10 +14,13 @@ final class RouterFactory
 
         // The current skautIS AppID posts its login token to this registered callback.
         $router->addRoute('login', 'Auth:skautIS');
+        // ...and returns here after logging out there.
+        $router->addRoute('logout', 'Auth:skautisLogout');
         // Keep the former callback paths working for existing test and development AppIDs.
         $router->addRoute('sign/<action>[/back-<backlink>]', 'Auth:in');
         $router->addRoute('prehled', 'Dashboard:default');
         $router->addRoute('session/keep-alive', 'Session:keepAlive');
+        $router->addRoute('session/switch-role', 'Session:switchRole');
         $router->addRoute('nahlasit-problem', 'BugReport:default');
         $router->addRoute('napoveda', 'Help:default');
         // Linked from the Google OAuth consent screen as the privacy policy.

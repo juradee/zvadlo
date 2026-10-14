@@ -22,7 +22,7 @@ final class SkautisRoleTest extends Unit
         ];
 
         foreach ($cases as $key => [$leader, $accountant, $officer, $eventManager, $basicUnit, $troop]) {
-            $role = new SkautisRole(1, $key, 'name', 1002, 'unit', 'display');
+            $role = new SkautisRole(1, $key, 'name', 1002, 'unit', 'display', '622.01');
 
             self::assertSame($leader, $role->isLeader(), $key);
             self::assertSame($accountant, $role->isAccountant(), $key);

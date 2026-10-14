@@ -12,7 +12,7 @@ a `production`; proměnné a tajemství žijí tam, nikdy v repozitáři.
    z `SYSTEM_EMAIL` (výchozí `noreply@<doména>`); HTTPS na doméně z `APP_BASE_URL`.
 2. **Databáze**: prázdná databáze a uživatel s právy na vytváření tabulek; schéma založí první deploy migrací.
 3. **skautIS**: aplikace zaregistrovaná zvlášť na testovacím a produkčním skautISu s návratovými adresami
-   `{APP_BASE_URL}/login` a `{APP_BASE_URL}/sign/skautis-logout` a s oprávněními podle
+   `{APP_BASE_URL}/login` a `{APP_BASE_URL}/logout` a s oprávněními podle
    [skautis-opravneni.md](skautis-opravneni.md). Prostředí `beta` a `test` běží proti testovacímu skautISu
    (`SKAUTIS_TEST_MODE=true`, testovací AppID), `production` proti produkčnímu (`false`, produkční AppID).
 4. **Google**: OAuth klient pro odesílání pošty z Gmail účtů jednotek; v konzoli Googlu povolit návratovou

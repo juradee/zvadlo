@@ -176,6 +176,23 @@ final class Acceptance extends Module
     }
 
     /**
+     * Opens the role dialog in the navigation, lets $adjust change the preference checkboxes and saves the role.
+     *
+     * @param (callable(): void)|null $adjust
+     */
+    public function switchRoleInNavigation(string $role, ?callable $adjust = null): void
+    {
+        $webDriver = $this->webDriver();
+        $webDriver->click('[data-test="role-switch-open"]');
+        $webDriver->waitForElementVisible('[data-test="role-switch-modal"]', 5);
+        $webDriver->selectOption('[data-test="role-switch-select"]', $role);
+        if ($adjust !== null) {
+            $adjust();
+        }
+        $this->clickAndWaitForPageText('[data-test="role-switch-confirm"]', 'Role byla přepnuta.');
+    }
+
+    /**
      * Clicks a redirecting control protected by a browser confirmation dialog.
      *
      * @param mixed $locator Codeception link, CSS or XPath locator

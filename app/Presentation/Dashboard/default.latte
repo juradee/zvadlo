@@ -1,32 +1,13 @@
 {block title}Přehled{/block}
 
 {block content}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-    <div>
-        <h1 class="h3 mb-1">Přehled</h1>
-        <p class="mb-0 text-body-secondary">
-            <span data-test="account-name">{$account->displayName}</span>
-            <span class="mx-1">·</span>
-            <span data-test="dashboard-role">{$role->displayName}</span>
-        </p>
-    </div>
-    <form n:name="roleForm" data-allow-resubmit data-test="role-form">
-        <div class="d-flex gap-2 align-items-end">
-            <div>
-                <label n:name="role" class="form-label small mb-1">{$form['role']->getCaption()}</label>
-                <select n:name="role" class="form-select" data-test="role-select"></select>
-            </div>
-            <button n:name="switch" class="btn btn-outline-primary" data-test="role-switch">Přepnout roli</button>
-        </div>
-        <div class="form-check form-check-inline mt-2 small">
-            <input n:name="remember" class="form-check-input" data-test="remember-role">
-            <label n:name="remember" class="form-check-label">{$form['remember']->getCaption()}</label>
-        </div>
-        <div class="form-check form-check-inline mt-2 small">
-            <input n:name="extend" class="form-check-input" data-test="extend-login">
-            <label n:name="extend" class="form-check-label">{$form['extend']->getCaption()}</label>
-        </div>
-    </form>
+<div class="mb-4">
+    <h1 class="h3 mb-1">Přehled</h1>
+    <p class="mb-0 text-body-secondary">
+        <span data-test="account-name">{$account->displayName}</span>
+        <span class="mx-1">·</span>
+        <span data-test="dashboard-role">{$role->displayName}</span>
+    </p>
 </div>
 
 <div class="card mb-3">

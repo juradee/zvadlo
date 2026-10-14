@@ -32,4 +32,18 @@ final class SessionPresenter extends BasePresenter
 
         $this->sendJson(['ok' => true]);
     }
+
+    /**
+     * Receives the role switch form from the navigation (BasePresenter::createComponentRoleSwitchForm).
+     */
+    public function actionSwitchRole(): void
+    {
+        if (! $this->getUser()->isLoggedIn() || ! $this->loginService->refresh()) {
+            $this->flashMessage('Přihlaste se prosím přes skautIS.', 'warning');
+            $this->redirect(':Auth:in');
+        }
+        if (! $this->getRequest()->isMethod('POST')) {
+            $this->redirect(':Dashboard:default');
+        }
+    }
 }

@@ -17,6 +17,7 @@ final readonly class SkautisRole
         public int $unitId,
         public string $unitName,
         public string $displayName,
+        public string $unitRegistrationNumber,
     ) {
     }
 

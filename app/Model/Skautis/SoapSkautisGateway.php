@@ -167,6 +167,7 @@ final class SoapSkautisGateway implements SkautisGateway
                 self::int($role, 'ID_Unit'),
                 self::string($role, 'Unit'),
                 self::string($role, 'DisplayName'),
+                self::string($role, 'RegistrationNumber'),
             );
         }
 

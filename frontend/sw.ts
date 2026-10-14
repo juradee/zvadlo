@@ -11,7 +11,7 @@ const ASSET_CACHE = `zvadlo-assets-${VERSION}`;
 const REGISTRATIONS_CACHE = `zvadlo-registrations-${VERSION}`;
 const OFFLINE_URL = '/offline';
 const REGISTRATION_LIST = /^\/akce\/\d+\/prihlasky\/?$/;
-const LOGOUT = /^\/sign\/(out|skautis-logout)(\/|$)/;
+const LOGOUT = /^\/(logout|sign\/(out|skautis-logout))(\/|$)/;
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
