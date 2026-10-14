@@ -77,6 +77,27 @@ final class MailingCest
         ]);
         $I->reloadPage();
         $I->see('odebrat@example.cz', '[data-test="mail-accounts"]');
+
+        // Sharing with subordinate units is the owner's choice, like bank accounts in h.skauting.
+        $share = '//li[contains(., "odebrat@example.cz")]//*[@data-test="share-account"]';
+        $I->clickAndWaitForPageText($share, 'mohou používat i podřízené jednotky', 10);
+        $I->see('i pro podřízené jednotky', '//li[contains(., "odebrat@example.cz")]');
+        $I->clickAndAcceptPopupAndWaitForPageText($share, 'už podřízené jednotky nepoužívají', 10);
+        $I->dontSee('i pro podřízené jednotky', '//li[contains(., "odebrat@example.cz")]');
+
+        // The středisko's account reaches the troop only once the středisko shares it.
+        $I->haveInDatabase('google_oauth', [
+            'id' => '0f0f0f0f-2222-4222-8333-444444444444',
+            'unit_id' => 1002,
+            'email' => 'stredisko@example.cz',
+            'refresh_token_encrypted' => 'x',
+            'updated_at' => '2026-10-14 10:00:00',
+        ]);
+        $I->reloadPage();
+        $I->dontSeeElement('[data-test="parent-account"]');
+        $I->updateInDatabase('google_oauth', ['allowed_for_subunits' => 1], ['email' => 'stredisko@example.cz']);
+        $I->reloadPage();
+        $I->see('stredisko@example.cz', '[data-test="parent-account"]');
         $I->clickAndAcceptPopupAndWaitForPageText('//li[contains(., "odebrat@example.cz")]//*[@data-test="remove-account"]', 'Účet byl odebrán', 10);
         $I->dontSee('odebrat@example.cz', '[data-test="mail-accounts"]');
         $I->fillField('agreementText', 'Souhlasím s účastí a pravidly oddílu.');

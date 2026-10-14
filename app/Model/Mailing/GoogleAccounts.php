@@ -38,9 +38,12 @@ final class GoogleAccounts
     }
 
     /**
-     * Exchanges the code Google returned for tokens and stores the account under the unit.
+     * Exchanges the code Google returned for tokens and stores the account under the unit. An account outside
+     * the allowed domains is not stored and its consent is revoked at Google.
+     *
+     * @param list<string> $allowedDomains see SenderDomains::allowedFor()
      */
-    public function connect(int $unitId, string $code): GoogleOAuth
+    public function connect(int $unitId, string $code, array $allowedDomains): GoogleOAuth
     {
         $client = $this->google->createClient();
         $token = $client->fetchAccessTokenWithAuthCode($code);
@@ -51,6 +54,10 @@ final class GoogleAccounts
         $email = (new Oauth2($client))->userinfo->get()->getEmail();
         if (! \is_string($email) || $email === '') {
             throw new RuntimeException('Google nevrátil e-mail účtu.');
+        }
+        if (! SenderDomains::isAllowed($email, $allowedDomains)) {
+            $client->revokeToken($token['refresh_token']);
+            throw new RuntimeException(\sprintf('Účet %s nelze propojit, jednotka smí posílat jen z domén %s.', $email, implode(', ', $allowedDomains)));
         }
 
         $now = new DateTimeImmutable();
@@ -65,6 +72,19 @@ final class GoogleAccounts
         }
 
         return $account;
+    }
+
+    public function allowForSubunits(GoogleOAuth $account): void
+    {
+        $account->allowForSubunits();
+        $this->accounts->save();
+    }
+
+    public function disallowForSubunits(GoogleOAuth $account): void
+    {
+        $account->disallowForSubunits();
+        $this->accounts->detachFromOtherUnits($account);
+        $this->accounts->save();
     }
 
     public function remove(GoogleOAuth $account): void

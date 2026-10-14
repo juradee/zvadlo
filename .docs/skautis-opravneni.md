@@ -77,6 +77,18 @@ Nejsou to oprávnění aplikace, ale role uživatele. Zvadlo podle nich vedoucí
 | `EV_EventGeneral` | `EV_EventGeneral_INSERT`, `EV_ParticipantGeneral_INSERT_EventGeneral`, `EV_ParticipantGeneral_DELETE_EventGeneral` |
 | `EV_EventCamp` | `EV_ParticipantCamp_INSERT_EventCamp`, `EV_ParticipantCamp_DELETE` |
 
+## Doplňující žádost (zatím neodeslaná)
+
+Žádost o produkční AppID odešla 14. 10. 2026 se seznamem metod výše. Metody níže Zvadlo potřebuje navíc a půjdou
+do další žádosti; do jejího odeslání se sem zapisuje každá nová metoda. Pole jsou ověřená na
+`https://is.skaut.cz/JunakWebservice/GoogleApps.asmx`, význam a oprávnění rolí ještě na testovacím skautISu.
+
+| Metoda | Účel ve Zvadle | Kdo | Typ | Akce ve skautISu |
+|---|---|---|---|---|
+| `GoogleApps.DomainAllUnit` | domény skautského Google Workspace, které jednotka vlastní (`ID_Unit`); povolené domény odesílacího Gmail účtu | vedoucí | čtení | |
+| `GoogleApps.DomainUnitAll` | domény přidělené jednotce nadřízenou (`ID_Unit`, `IncludeChildUnit`) | vedoucí | čtení | |
+| `GoogleApps.DomainAllPerson` | domény dostupné přihlášenému uživateli (`ID_Person`, `CanGoogleAccount=true`) | vedoucí | čtení | |
+
 ## Co se stane bez oprávnění
 
 | Chybí | Dopad |

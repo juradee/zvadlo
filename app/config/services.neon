@@ -50,6 +50,8 @@ services:
     - App\Model\Mailing\EmailTemplateProvider
     - App\Model\Mailing\GoogleOAuthRepository
     - App\Model\Mailing\GoogleAccounts
+    - App\Model\Mailing\MailAccounts
+    - App\Model\Mailing\SenderDomains
     - App\Model\Mailing\EmailMessageRepository
     - App\Model\Mailing\MailComposer(appBaseUrl: %appBaseUrl%, systemEmail: %systemEmail%)
     - App\Model\Mailing\EventMailer
@@ -62,6 +64,7 @@ services:
     - App\Model\Task\TaskRunner(handlers: typed(App\Model\Task\TaskHandler))
     - App\Model\Task\TasksRunCommand
     - App\Model\User\UnitAccessResolver
+    - App\Model\User\UnitHierarchy
     - App\Model\User\CurrentUser
     - App\Model\User\CurrentUserEmail
     - App\Model\User\UserPreferenceRepository

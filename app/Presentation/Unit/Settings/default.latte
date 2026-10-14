@@ -17,17 +17,30 @@
         <div class="card mb-3">
             <div class="card-header">Odesílací Gmail účty</div>
             <ul class="list-group list-group-flush" data-test="mail-accounts">
-                <li n:foreach="$accounts as $account" class="list-group-item d-flex justify-content-between align-items-center gap-2">
-                    <span>{$account->getEmail()} <span class="small text-body-secondary">propojeno {$account->getUpdatedAt()|date:'d.m.Y'}</span></span>
+                <li n:foreach="$accounts as $account" class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span>
+                        {$account->getEmail()} <span class="small text-body-secondary">propojeno {$account->getUpdatedAt()|date:'d.m.Y'}</span>
+                        <span n:if="$account->isAllowedForSubunits()" class="badge text-bg-light border" data-test="shared-badge">i pro podřízené jednotky</span>
+                    </span>
                     {* A component name must not contain '-', the UUID of the account loses its dashes. *}
-                    {form 'removeAccount-' . str_replace('-', '', $account->getId()), data-allow-resubmit => true}{input remove}{/form}
+                    {var $key = str_replace('-', '', $account->getId())}
+                    <span class="d-flex gap-2">
+                        {form 'shareAccount-' . $key, data-allow-resubmit => true}{input toggle}{/form}
+                        {form 'removeAccount-' . $key, data-allow-resubmit => true}{input remove}{/form}
+                    </span>
                 </li>
-                <li n:if="$accounts === []" class="list-group-item text-body-secondary">Zatím žádný účet. E-maily akcí odcházejí z Gmail účtu jednotky, bez něj nelze akci otevřít.</li>
+                <li n:foreach="$sharedAccounts as $account" class="list-group-item text-body-secondary" data-test="parent-account">
+                    {$account->getEmail()} <span class="small">povolený nadřízenou jednotkou</span>
+                </li>
+                <li n:if="$accounts === [] && $sharedAccounts === []" class="list-group-item text-body-secondary">Zatím žádný účet. E-maily akcí odcházejí z Gmail účtu jednotky, bez něj nelze akci otevřít.</li>
             </ul>
             <div class="card-body border-top">
-                {if $googleConfigured}
+                {if ! $canOwnAccounts}
+                    <div class="text-body-secondary small" data-test="no-own-accounts">Gmail účet propojuje oddíl nebo vyšší jednotka a může ho povolit podřízeným jednotkám.</div>
+                {elseif $googleConfigured}
                     <a n:href=":Google:oauth jednotka => $unit->id" class="btn btn-outline-primary" data-test="connect-google">Propojit Gmail účet</a>
                     <div class="form-text">Přesměrujeme vás na Google; Zvadlo dostane právo odesílat e-maily z vybraného účtu a zná jeho adresu, nic víc.</div>
+                    <div class="form-text" data-test="allowed-domains">Lze propojit jen účet z domén: {implode(', ', $allowedDomains)} (skautské domény a domény jednotky ve skautISu).</div>
                 {else}
                     <div class="alert alert-warning mb-0" data-test="google-not-configured">Propojení s Googlem není v tomto prostředí nastavené (chybí soubor s přihlašovacími údaji aplikace).</div>
                 {/if}

@@ -6,6 +6,7 @@ namespace App\Model\Skautis;
 
 use App\Model\Skautis\Dto\Camp;
 use App\Model\Skautis\Dto\Contact;
+use App\Model\Skautis\Dto\DomainAssignment;
 use App\Model\Skautis\Dto\NewEvent;
 use App\Model\Skautis\Dto\NewPerson;
 use App\Model\Skautis\Dto\ParentContact;
@@ -142,6 +143,27 @@ interface SkautisGateway
      * State id of a camp (Events.EventCampDetail → ID_EventCampState), null when not readable.
      */
     public function getCampState(int $campId): ?string;
+
+    /**
+     * Domains of the scout Google Workspace the unit owns (GoogleApps.DomainAllUnit); empty when the role may not see them.
+     *
+     * @return list<string>
+     */
+    public function getUnitDomains(int $unitId): array;
+
+    /**
+     * Domains assigned to the unit (GoogleApps.DomainUnitAll); empty when the role may not see them.
+     *
+     * @return list<DomainAssignment>
+     */
+    public function getAssignedDomains(int $unitId): array;
+
+    /**
+     * Domains the person may have a Google account in (GoogleApps.DomainAllPerson); empty when not readable.
+     *
+     * @return list<string>
+     */
+    public function getPersonDomains(int $personId): array;
 
     /**
      * Actions the active role may perform on a skautIS record (UserManagement.ActionVerify).

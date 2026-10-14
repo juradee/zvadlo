@@ -112,7 +112,7 @@ vedoucí oddílu jen svého oddílu (stejná logika jako v h.skautingu, viz [opr
 | stav | koncept → otevřená → uzavřená → archivovaná |
 | veřejné přihlašování | `vypnuto` (jen pozvaní přes osobní odkaz) / `veřejný odkaz` (kdokoli s odkazem, bez ověření) / `jen přes skautIS` (kdokoli s účtem ve skautISu, i z jiné jednotky; bez skautISu se přihlásit nejde); viz 4.4 a 4.6 |
 | skautIS akce | ID akce ve skautISu po propsání, včetně odkazu |
-| odesílací účet | Gmail účet jednotky, ze kterého odcházejí e-maily (výběr z účtů jednotky nebo nadřízeného střediska); bez něj nelze akci otevřít |
+| odesílací účet | Gmail účet jednotky, ze kterého odcházejí e-maily (účty jednotky a účty nadřízených jednotek, které je podřízeným povolily, viz 8.2); bez něj nelze akci otevřít |
 
 Stavy:
 
@@ -536,7 +536,16 @@ napíše při ručním odeslání), `%kod%` (jen `edit_code`).
   přesně jako h.skauting: tlačítko v nastavení jednotky → Google → návrat na `/google/token` → uloží se
   jen **refresh token** do `google_oauth` (jednotka, e-mail). Účet je vázaný na jednotku aktivní role.
   Refresh token je v databázi šifrovaný klíčem z `.env` (`APP_SECRET`).
-- Akce má vybraný odesílací účet; nabízejí se účty její jednotky a nadřízeného střediska (pravidlo z h.skautingu).
+- **Povolené domény** (rozhodnutí 37): účet lze propojit jen z domény `skaut.cz`, `skautka.cz`, z domén skautského
+  Google Workspace, které jednotka vlastní (`GoogleApps.DomainAllUnit`) nebo které jí přidělila nadřízená
+  (`GoogleApps.DomainUnitAll`; doména nadřízené platí dolů jen s `IncludeChildUnit`), a z domén přihlášeného
+  vedoucího (`GoogleApps.DomainAllPerson`). Vše se čte ze skautISu při každém zobrazení a propojení, nic se
+  necachuje. Účet mimo povolené domény se neuloží a souhlas u Googlu se odvolá. Účet propojuje oddíl nebo vyšší
+  jednotka, družina ne. h.skauting tohle pravidlo jen popisuje textem, nevynucuje ho.
+- **Sdílení dolů** jako bankovní účet v h.skautingu: účet patří jednotce, která ho propojila; podřízené jednotky ho
+  mohou použít, jen když to jednotka zapne („Povolit podřízeným“, výchozí vypnuto). Vypnutí odebere účet akcím
+  a výchozímu nastavení podřízených jednotek. Akce už nastavený účet podrží, i když ho její jednotka nově vybrat nesmí.
+- Akce má vybraný odesílací účet; nabízejí se účty její jednotky a sdílené účty nadřízených jednotek.
 - Odeslání přes Gmail API (`users.messages.send`). Neplatný nebo odvolaný token skončí srozumitelnou chybou
   „Je potřeba odebrat a znovu propojit e-mailový účet.“
 - Jiný odesílatel pro e-maily akce **není**, stejně jako v h.skautingu. Bez připojeného účtu nelze akci otevřít
@@ -943,6 +952,7 @@ skautIS). Otevřené body jsou označené *(ověřit)*.
 | 31 | Režim jen přes skautIS | volitelný režim akce: přihlásit se může kdokoli s účtem ve skautISu, i z jiné jednotky, bez skautISu to nejde; zápis osoby z jiné jednotky do akce metodou `ParticipantGeneralInsert` s `ID_Person` schéma dovoluje, oprávnění role *(ověřit ve fázi 5)* (viz 4.1, 4.6) |
 | 35 | Odznak v h.skautingu | push ze Zvadla místo pull API: dávka nejvýš jednou za minutu jen s propsanými akcemi, které se změnily, podpis HMAC-SHA256, odklad po chybě; h.skauting drží kopii neosobních čísel a jeho stránky Zvadlo nevolají; pull API odstraněno (viz 9.4) |
 | 36 | Uzávěrka a kapacita | jeden limit pro podání, změnu i zrušení přihlášky (uzávěrka, prázdná = do konce akce), zámek úprav zrušen; čekací listina je volba akce; odhlásí-li se účastník sám, místo automaticky dostane první náhradník a e-mail `promoted`; zruší-li účast vedoucí, místo zůstane volné a vedoucí rozhodne, zda náhradníka přijme; přijetí nad kapacitu jen s výslovným potvrzením vedoucího (viz 5.3) |
+| 37 | Domény odesílacích účtů | jen `skaut.cz`, `skautka.cz` a domény skautského Google Workspace jednotky, přidělené nadřízenou (s podřízenými) nebo dostupné přihlášenému vedoucímu, vše živě ze skautISu bez cache; účet propojuje oddíl a výš; sdílení s podřízenými jednotkami zapíná vlastník účtu jako u bankovních účtů h.skautingu (14. 10. 2026); výjimky pro jiné domény později |
 
 K bodu 11: vydané verze `skautis/nette` (2.2.0 z roku 2020 i 3.0.0-alpha.3 z roku 2022) vyžadují `nette/utils`
 ^3.0 a `nette/utils` 3.2.x má omezení `php <8.4`, takže s nimi projekt na PHP 8.4 nejde ani nainstalovat; právě

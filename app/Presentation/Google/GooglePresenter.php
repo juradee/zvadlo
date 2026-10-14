@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Google;
 
 use App\Model\Mailing\GoogleAccounts;
+use App\Model\Mailing\SenderDomains;
 use App\Presentation\SecuredPresenter;
 use Nette\Utils\Random;
 use Throwable;
@@ -15,8 +16,10 @@ use Throwable;
  */
 final class GooglePresenter extends SecuredPresenter
 {
-    public function __construct(private readonly GoogleAccounts $google)
-    {
+    public function __construct(
+        private readonly GoogleAccounts $google,
+        private readonly SenderDomains $senderDomains,
+    ) {
         parent::__construct();
     }
 
@@ -27,6 +30,11 @@ final class GooglePresenter extends SecuredPresenter
         }
         if (! $this->google->isConfigured()) {
             $this->flashMessage('Propojení s Googlem není v tomto prostředí nastavené.', 'warning');
+            $this->redirect(':Unit:Settings:default', ['jednotka' => $jednotka]);
+        }
+        $unit = $this->currentUser->getAccess()->edit[$jednotka];
+        if (! SenderDomains::canOwnAccounts($unit->typeId)) {
+            $this->flashMessage('Gmail účet propojuje oddíl nebo vyšší jednotka a může ho povolit podřízeným jednotkám.', 'warning');
             $this->redirect(':Unit:Settings:default', ['jednotka' => $jednotka]);
         }
 
@@ -59,7 +67,8 @@ final class GooglePresenter extends SecuredPresenter
         }
 
         try {
-            $account = $this->google->connect($unitId, $code);
+            $allowedDomains = $this->senderDomains->allowedFor($unitId, $this->currentUser->getUser()->personId);
+            $account = $this->google->connect($unitId, $code, $allowedDomains);
             $this->flashMessage(\sprintf('Účet %s je propojený.', $account->getEmail()), 'success');
         } catch (Throwable $exception) {
             $this->flashMessage('Propojení se nezdařilo: '.$exception->getMessage(), 'danger');

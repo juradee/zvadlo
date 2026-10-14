@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Model\Mailing;
 
+use App\Model\Event\Event;
+use App\Model\Unit\UnitSettings;
 use Doctrine\ORM\EntityManagerInterface;
 
 class GoogleOAuthRepository
@@ -18,7 +20,7 @@ class GoogleOAuthRepository
     }
 
     /**
-     * Accounts of the given units (the event's unit and its parent), oldest first.
+     * Accounts owned by the given units, oldest first.
      *
      * @param list<int> $unitIds
      *
@@ -51,6 +53,23 @@ class GoogleOAuthRepository
     {
         $this->entityManager->remove($account);
         $this->entityManager->flush();
+    }
+
+    /**
+     * Events and unit defaults of other units lose the account once its unit stops sharing it.
+     */
+    public function detachFromOtherUnits(GoogleOAuth $account): void
+    {
+        $queries = [
+            'UPDATE '.Event::class.' e SET e.mailAccount = NULL WHERE e.mailAccount = :account AND e.unitId <> :unit',
+            'UPDATE '.UnitSettings::class.' s SET s.defaultMailAccount = NULL WHERE s.defaultMailAccount = :account AND s.unitId <> :unit',
+        ];
+        foreach ($queries as $dql) {
+            $this->entityManager->createQuery($dql)
+                ->setParameter('account', $account->getId())
+                ->setParameter('unit', $account->getUnitId())
+                ->execute();
+        }
     }
 
     public function save(): void

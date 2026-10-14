@@ -14,6 +14,7 @@ use App\Model\Event\MissingMailAccountException;
 use App\Model\Event\PublicRegistration;
 use App\Model\Event\ScopeLevels;
 use App\Model\Mailing\GoogleOAuthRepository;
+use App\Model\Mailing\MailAccounts;
 use App\Model\Mailing\MailerFactory;
 use App\Model\Registration\MemberFingerprints;
 use App\Model\Registration\RegistrationRepository;
@@ -24,6 +25,7 @@ use App\Model\Skautis\SkautisGateway;
 use App\Model\Skautis\SkautisLinks;
 use App\Model\Unit\UnitSettingsRepository;
 use App\Model\User\CurrentUserEmail;
+use App\Model\User\UnitHierarchy;
 use App\Presentation\Accessory\Form\DateInput;
 use App\Presentation\Accessory\Form\FormFactory;
 use App\Presentation\SecuredPresenter;
@@ -49,6 +51,8 @@ final class EventPresenter extends SecuredPresenter
         private readonly SkautisLinks $links,
         private readonly CurrentUserEmail $currentUserEmail,
         private readonly GoogleOAuthRepository $accounts,
+        private readonly MailAccounts $mailAccounts,
+        private readonly UnitHierarchy $unitHierarchy,
         private readonly UnitSettingsRepository $unitSettings,
         private readonly MailerFactory $mailers,
         private readonly FormFactory $forms,
@@ -273,12 +277,17 @@ final class EventPresenter extends SecuredPresenter
                 ->setRequired('Zadejte počet dní upozornění, 0 = neposílat.')
                 ->addRule($form::Range, 'Zadejte 0 až 30 dní.', [0, 30]);
         $accounts = [];
-        foreach ($this->accounts->findByUnits($this->accountUnitIds()) as $account) {
-            $accounts[$account->getId()] = $account->getEmail().' ('.($access->read[$account->getUnitId()]->displayName ?? $account->getUnitId()).')';
+        foreach ($this->mailAccounts->availableForAny(array_keys($access->edit)) as $id => $account) {
+            $accounts[$id] = $account->getEmail().' ('.($this->unitHierarchy->unit($account->getUnitId())->displayName ?? $account->getUnitId()).')';
         }
-        $form->addSelect('mailAccount', 'Odesílací e-mailový účet', $accounts)
+        // An event keeps the account it already has, even one its unit may no longer choose.
+        $current = $this->event?->getMailAccount();
+        if ($current !== null && ! isset($accounts[$current->getId()])) {
+            $accounts[$current->getId()] = $current->getEmail().' (dosavadní účet)';
+        }
+        $mailAccount = $form->addSelect('mailAccount', 'Odesílací e-mailový účet', $accounts)
             ->setPrompt($accounts === [] ? 'Žádný Gmail účet není propojený' : 'Vyberte')
-            ->setOption('description', 'Gmail účet jednotky (nebo střediska), ze kterého odchází pozvánky a potvrzení. Propojuje se v nastavení jednotky.');
+            ->setOption('description', 'Gmail účet jednotky, ze kterého odchází pozvánky a potvrzení; nebo účet nadřízené jednotky, pokud ho podřízeným povolila. Propojuje se v nastavení jednotky.');
         $form->addSelect('publicRegistration', 'Veřejné přihlašování', [
             PublicRegistration::None->value => PublicRegistration::None->label(),
             PublicRegistration::Open->value => PublicRegistration::Open->label(),
@@ -343,10 +352,17 @@ final class EventPresenter extends SecuredPresenter
             }
         };
 
-        $form->onSuccess[] = function (Form $form, array $values): void {
+        $form->onSuccess[] = function (Form $form, array $values) use ($mailAccount): void {
             $input = $this->inputFromValues($values);
             $userId = $this->currentUser->getUser()->id;
             $account = $values['mailAccount'] === null ? null : $this->accounts->find((string) $values['mailAccount']);
+            $eventUnitId = $this->camp->unitId ?? $this->event?->getUnitId() ?? (int) $values['unitId'];
+            $unchanged = $account !== null && $account === $this->event?->getMailAccount();
+            if ($account !== null && ! $unchanged && ! $this->mailAccounts->isAvailableFor($account, $eventUnitId)) {
+                $mailAccount->addError('Tento účet jednotka akce nesmí používat. Vyberte účet jednotky nebo účet, který jí nadřízená jednotka povolila.');
+
+                return;
+            }
 
             if ($this->camp !== null) {
                 $event = $this->service->createFromCamp($this->camp, $input, $userId, $account);
@@ -488,25 +504,6 @@ final class EventPresenter extends SecuredPresenter
             lockNoticeDays: (int) $values['lockNoticeDays'],
             waitlistEnabled: (bool) $values['waitlistEnabled'],
         );
-    }
-
-    /**
-     * Accounts may belong to the event's unit or to its parent (the středisko); all editable units and their parents qualify.
-     *
-     * @return list<int>
-     */
-    private function accountUnitIds(): array
-    {
-        $access = $this->currentUser->getAccess();
-        $ids = [];
-        foreach ($access->edit as $unit) {
-            $ids[] = $unit->id;
-            if ($unit->parentId !== null) {
-                $ids[] = $unit->parentId;
-            }
-        }
-
-        return array_values(array_unique($ids));
     }
 
     private function publicLink(Event $event): string

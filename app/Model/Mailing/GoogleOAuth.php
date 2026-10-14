@@ -32,6 +32,10 @@ class GoogleOAuth
     #[ORM\Column]
     private DateTimeImmutable $updatedAt;
 
+    /** Subordinate units may send from the account only when its unit allows it (like bank accounts in h.skauting). */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $allowedForSubunits = false;
+
     public function __construct(int $unitId, string $email, string $refreshTokenEncrypted, DateTimeImmutable $now)
     {
         $this->id = self::uuid();
@@ -45,6 +49,21 @@ class GoogleOAuth
     {
         $this->refreshTokenEncrypted = $refreshTokenEncrypted;
         $this->updatedAt = $now;
+    }
+
+    public function allowForSubunits(): void
+    {
+        $this->allowedForSubunits = true;
+    }
+
+    public function disallowForSubunits(): void
+    {
+        $this->allowedForSubunits = false;
+    }
+
+    public function isAllowedForSubunits(): bool
+    {
+        return $this->allowedForSubunits;
     }
 
     public function getId(): string

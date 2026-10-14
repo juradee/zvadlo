@@ -7,10 +7,14 @@ namespace App\Presentation\Unit\Settings;
 use App\Model\Mailing\EmailTemplate;
 use App\Model\Mailing\EmailType;
 use App\Model\Mailing\GoogleAccounts;
+use App\Model\Mailing\GoogleOAuth;
 use App\Model\Mailing\GoogleOAuthRepository;
+use App\Model\Mailing\MailAccounts;
+use App\Model\Mailing\SenderDomains;
 use App\Model\Mailing\TemplateRenderer;
 use App\Model\Mailing\UnitEmailTemplateRepository;
 use App\Model\Unit\UnitSettingsRepository;
+use App\Model\User\UnitHierarchy;
 use App\Presentation\Accessory\Form\FormFactory;
 use App\Presentation\SecuredPresenter;
 use LogicException;
@@ -29,6 +33,9 @@ final class SettingsPresenter extends SecuredPresenter
         private readonly UnitEmailTemplateRepository $templates,
         private readonly GoogleOAuthRepository $accounts,
         private readonly GoogleAccounts $google,
+        private readonly MailAccounts $mailAccounts,
+        private readonly SenderDomains $senderDomains,
+        private readonly UnitHierarchy $units,
         private readonly FormFactory $forms,
     ) {
         parent::__construct();
@@ -59,11 +66,20 @@ final class SettingsPresenter extends SecuredPresenter
             $templates[$type->value] = ['type' => $type, 'custom' => isset($own[$type->value])];
         }
 
-        $this->template->unit = $access->edit[$unitId];
+        $unit = $access->edit[$unitId];
+        $canOwnAccounts = SenderDomains::canOwnAccounts($unit->typeId);
+        $googleConfigured = $this->google->isConfigured();
+        $this->template->unit = $unit;
         $this->template->units = $access->edit;
         $this->template->settings = $this->settings->get($unitId);
         $this->template->accounts = $this->accounts->findByUnits([$unitId]);
-        $this->template->googleConfigured = $this->google->isConfigured();
+        $this->template->sharedAccounts = array_filter($this->mailAccounts->availableFor($unitId), static fn (GoogleOAuth $account): bool => $account->getUnitId() !== $unitId);
+        $this->template->canOwnAccounts = $canOwnAccounts;
+        $this->template->googleConfigured = $googleConfigured;
+        // Read from skautIS on every visit, never cached; only where an account can be connected.
+        $this->template->allowedDomains = $googleConfigured && $canOwnAccounts
+            ? $this->senderDomains->allowedFor($unitId, $this->currentUser->getUser()->personId)
+            : [];
         $this->template->templates = $templates;
         $this->template->symbols = TemplateRenderer::SYMBOLS;
     }
@@ -73,8 +89,8 @@ final class SettingsPresenter extends SecuredPresenter
         $unitId = $this->requireUnitId();
         $settings = $this->settings->get($unitId);
         $accounts = [];
-        foreach ($this->accounts->findByUnits([$unitId]) as $account) {
-            $accounts[$account->getId()] = $account->getEmail();
+        foreach ($this->mailAccounts->availableFor($unitId) as $account) {
+            $accounts[$account->getId()] = $this->accountLabel($account, $unitId);
         }
 
         $form = $this->forms->create();
@@ -92,6 +108,9 @@ final class SettingsPresenter extends SecuredPresenter
         $form->onSuccess[] = function (Form $form, array $values): void {
             $settings = $this->settings->get($this->requireUnitId());
             $account = $values['defaultMailAccount'] === null ? null : $this->accounts->find((string) $values['defaultMailAccount']);
+            if ($account !== null && ! $this->mailAccounts->isAvailableFor($account, $this->requireUnitId())) {
+                $this->error('Tento účet jednotka nesmí používat.', 403);
+            }
             $settings->edit(
                 $values['agreementText'] === null ? null : (string) $values['agreementText'],
                 $account,
@@ -162,17 +181,64 @@ final class SettingsPresenter extends SecuredPresenter
                 ->setHtmlAttribute('data-test', 'remove-account')
                 ->setHtmlAttribute('data-confirm', 'Odebrat účet? Akce, které z něj posílají, budou potřebovat jiný účet.');
             $form->onSuccess[] = function () use ($key): void {
-                foreach ($this->accounts->findByUnits([$this->requireUnitId()]) as $account) {
-                    if (str_replace('-', '', $account->getId()) === $key) {
-                        $this->google->remove($account);
-                        $this->flashMessage('Účet byl odebrán.', 'success');
-                    }
+                $account = $this->ownAccount($key);
+                if ($account !== null) {
+                    $this->google->remove($account);
+                    $this->flashMessage('Účet byl odebrán.', 'success');
                 }
                 $this->redirect('this');
             };
 
             return $form;
         });
+    }
+
+    /**
+     * @return Multiplier<Form>
+     */
+    protected function createComponentShareAccount(): Multiplier
+    {
+        // Keyed like removeAccount: the account UUID without dashes.
+        return new Multiplier(function (string $key): Form {
+            $account = $this->ownAccount($key);
+            $form = $this->forms->create();
+            $shared = $account?->isAllowedForSubunits() ?? false;
+            $form->addSubmit('toggle', $shared ? 'Zakázat podřízeným' : 'Povolit podřízeným')
+                ->setOption('class', 'btn btn-sm btn-outline-secondary')
+                ->setHtmlAttribute('data-test', 'share-account')
+                ->setHtmlAttribute('data-confirm', $shared ? 'Zakázat účet podřízeným jednotkám? Jejich akce, které z něj posílají, budou potřebovat jiný účet.' : null);
+            $form->onSuccess[] = function () use ($key): void {
+                $account = $this->ownAccount($key);
+                if ($account !== null && $account->isAllowedForSubunits()) {
+                    $this->google->disallowForSubunits($account);
+                    $this->flashMessage(\sprintf('Účet %s už podřízené jednotky nepoužívají.', $account->getEmail()), 'success');
+                } elseif ($account !== null) {
+                    $this->google->allowForSubunits($account);
+                    $this->flashMessage(\sprintf('Účet %s mohou používat i podřízené jednotky.', $account->getEmail()), 'success');
+                }
+                $this->redirect('this');
+            };
+
+            return $form;
+        });
+    }
+
+    private function ownAccount(string $key): ?GoogleOAuth
+    {
+        foreach ($this->accounts->findByUnits([$this->requireUnitId()]) as $account) {
+            if (str_replace('-', '', $account->getId()) === $key) {
+                return $account;
+            }
+        }
+
+        return null;
+    }
+
+    private function accountLabel(GoogleOAuth $account, int $unitId): string
+    {
+        return $account->getUnitId() === $unitId
+            ? $account->getEmail()
+            : $account->getEmail().' ('.($this->units->unit($account->getUnitId())->displayName ?? $account->getUnitId()).')';
     }
 
     private function requireUnitId(): int

@@ -6,6 +6,7 @@ namespace App\Model\Skautis;
 
 use App\Model\Skautis\Dto\Camp;
 use App\Model\Skautis\Dto\Contact;
+use App\Model\Skautis\Dto\DomainAssignment;
 use App\Model\Skautis\Dto\NewEvent;
 use App\Model\Skautis\Dto\NewPerson;
 use App\Model\Skautis\Dto\ParentContact;
@@ -33,6 +34,9 @@ final class SoapSkautisGateway implements SkautisGateway
     /** @var list<string> */
     private const array RETRYABLE_READ_METHODS = [
         'ActionVerify',
+        'DomainAllPerson',
+        'DomainAllUnit',
+        'DomainUnitAll',
         'EventCampAll',
         'EventCampDetail',
         'EventGeneralScopeAll',
@@ -247,6 +251,47 @@ final class SoapSkautisGateway implements SkautisGateway
         }
 
         return $this->personDetail($detail, 'ID');
+    }
+
+    public function getUnitDomains(int $unitId): array
+    {
+        try {
+            $rows = $this->objects($this->call(WebServiceName::GOOGLE_APPS, 'DomainAllUnit', ['ID_Unit' => $unitId]));
+        } catch (PermissionException) {
+            return [];
+        }
+
+        return self::domains($rows, 'DisplayName');
+    }
+
+    public function getAssignedDomains(int $unitId): array
+    {
+        try {
+            $rows = $this->objects($this->call(WebServiceName::GOOGLE_APPS, 'DomainUnitAll', ['ID_Unit' => $unitId]));
+        } catch (PermissionException) {
+            return [];
+        }
+
+        $assignments = [];
+        foreach ($rows as $row) {
+            $domain = mb_strtolower(trim(self::string($row, 'Domain')));
+            if ($domain !== '') {
+                $assignments[] = new DomainAssignment($domain, ($row->IncludeChildUnit ?? false) === true);
+            }
+        }
+
+        return $assignments;
+    }
+
+    public function getPersonDomains(int $personId): array
+    {
+        try {
+            $rows = $this->objects($this->call(WebServiceName::GOOGLE_APPS, 'DomainAllPerson', ['ID_Person' => $personId, 'CanGoogleAccount' => true]));
+        } catch (PermissionException) {
+            return [];
+        }
+
+        return self::domains($rows, 'DisplayName');
     }
 
     public function getPersonChildren(int $personId): array
@@ -577,6 +622,18 @@ final class SoapSkautisGateway implements SkautisGateway
         $date = DateTimeImmutable::createFromFormat('Y-m-d\TH:i:s', substr($value, 0, 19), new DateTimeZone('Europe/Prague'));
 
         return $date === false ? null : $date->setTime(0, 0);
+    }
+
+    /**
+     * @param list<stdClass> $rows
+     *
+     * @return list<string>
+     */
+    private static function domains(array $rows, string $field): array
+    {
+        $domains = array_map(static fn (stdClass $row): string => mb_strtolower(trim(self::string($row, $field))), $rows);
+
+        return array_values(array_unique(array_filter($domains, static fn (string $domain): bool => $domain !== '')));
     }
 
     private static function string(stdClass $object, string $field): string
