@@ -20,6 +20,8 @@ final class RouterFactory
         $router->addRoute('session/keep-alive', 'Session:keepAlive');
         $router->addRoute('nahlasit-problem', 'BugReport:default');
         $router->addRoute('napoveda', 'Help:default');
+        // Linked from the Google OAuth consent screen as the privacy policy.
+        $router->addRoute('ochrana-osobnich-udaju', 'Privacy:default');
         $router->addRoute('health', 'Health:default');
         // PWA for leaders: the worker must live at the root so its scope covers the whole application.
         $router->addRoute('manifest.webmanifest', 'Pwa:manifest');

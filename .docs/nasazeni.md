@@ -16,7 +16,9 @@ a `production`; proměnné a tajemství žijí tam, nikdy v repozitáři.
    [skautis-opravneni.md](skautis-opravneni.md). Prostředí `beta` a `test` běží proti testovacímu skautISu
    (`SKAUTIS_TEST_MODE=true`, testovací AppID), `production` proti produkčnímu (`false`, produkční AppID).
 4. **Google**: OAuth klient pro odesílání pošty z Gmail účtů jednotek; v konzoli Googlu povolit návratovou
-   adresu `{APP_BASE_URL}/google/token` a JSON klienta uložit do tajemství `GOOGLE_CREDENTIALS`.
+   adresu `{APP_BASE_URL}/google/token` a JSON klienta uložit do tajemství `GOOGLE_CREDENTIALS`. V Branding consent
+   screenu je odkaz na zásady ochrany osobních údajů `{APP_BASE_URL}/ochrana-osobnich-udaju`; aplikaci publikovat
+   (v režimu Testing refresh tokeny po 7 dnech vyprší) a zapnout Gmail API.
 5. **GitHub**: environments `beta`, `test` a `production` s proměnnými a tajemstvími níže; u `production`
    zapnout schválení nasazení. `APP_SECRET` vygenerovat jednou a už neměnit. Vše založí `bin/github-setup.sh`
    s přihlášeným `gh` (bez argumentů všechna prostředí, `bin/github-setup.sh production` jen vybraná): první

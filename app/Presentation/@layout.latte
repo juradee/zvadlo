@@ -62,6 +62,8 @@
     <a n:if="$user->isLoggedIn()" n:href=":BugReport:default url => (string) $presenter->getHttpRequest()->getUrl()" class="link-secondary" data-test="footer-bug-report-link">Nahlásit problém</a>
     <span n:if="! $user->isLoggedIn()" class="text-body-secondary" data-test="footer-bug-report-link">Nahlásit problém lze po přihlášení</span>
     <span class="mx-2">·</span>
+    <a n:href=":Privacy:default" class="link-secondary" data-test="footer-privacy-link">Ochrana osobních údajů</a>
+    <span class="mx-2">·</span>
     <span>Zvadlo {$environment->releaseHash}</span>
 </footer>
 </body>

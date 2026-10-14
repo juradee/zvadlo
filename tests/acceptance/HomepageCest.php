@@ -16,4 +16,13 @@ final class HomepageCest
         $I->see('CI', '[data-test="environment-badge"]');
         $I->seeElement('[data-test="login-button"]');
     }
+
+    public function privacyPolicyIsPublicAndLinkedFromTheFooter(AcceptanceTester $I): void
+    {
+        $I->amOnPage('/');
+        $I->click('[data-test="footer-privacy-link"]');
+        $I->seeInCurrentUrl('/ochrana-osobnich-udaju');
+        $I->see('Ochrana osobních údajů', 'h1');
+        $I->see('gmail.send', '[data-test="privacy-page"]');
+    }
 }
