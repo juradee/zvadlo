@@ -145,14 +145,14 @@ interface SkautisGateway
     public function getCampState(int $campId): ?string;
 
     /**
-     * Domains of the scout Google Workspace the unit owns (GoogleApps.DomainAllUnit); empty when the role may not see them.
+     * Domains of the scout Google Workspace the unit owns (GoogleApps.DomainAllUnit); empty when skautIS does not give them.
      *
      * @return list<string>
      */
     public function getUnitDomains(int $unitId): array;
 
     /**
-     * Domains assigned to the unit (GoogleApps.DomainUnitAll); empty when the role may not see them.
+     * Domains assigned to the unit (GoogleApps.DomainUnitAll); empty when skautIS does not give them.
      *
      * @return list<DomainAssignment>
      */

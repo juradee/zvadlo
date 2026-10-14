@@ -257,7 +257,8 @@ final class SoapSkautisGateway implements SkautisGateway
     {
         try {
             $rows = $this->objects($this->call(WebServiceName::GOOGLE_APPS, 'DomainAllUnit', ['ID_Unit' => $unitId]));
-        } catch (PermissionException) {
+        } catch (PermissionException|SkautisException) {
+            // Domains only add to the scout ones: GoogleApps the AppID or the role may not use must not break the page.
             return [];
         }
 
@@ -268,7 +269,7 @@ final class SoapSkautisGateway implements SkautisGateway
     {
         try {
             $rows = $this->objects($this->call(WebServiceName::GOOGLE_APPS, 'DomainUnitAll', ['ID_Unit' => $unitId]));
-        } catch (PermissionException) {
+        } catch (PermissionException|SkautisException) {
             return [];
         }
 
@@ -287,7 +288,7 @@ final class SoapSkautisGateway implements SkautisGateway
     {
         try {
             $rows = $this->objects($this->call(WebServiceName::GOOGLE_APPS, 'DomainAllPerson', ['ID_Person' => $personId, 'CanGoogleAccount' => true]));
-        } catch (PermissionException) {
+        } catch (PermissionException|SkautisException) {
             return [];
         }
 
