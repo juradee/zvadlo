@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Presentation\Google;
 
 use App\Model\Mailing\GoogleAccounts;
+use App\Model\Mailing\GoogleConnectException;
 use App\Model\Mailing\SenderDomains;
 use App\Presentation\SecuredPresenter;
 use Nette\Utils\Random;
 use Throwable;
+use Tracy\ILogger;
 
 /**
  * Gmail account consent: /google/oauth sends the leader to Google, /google/token takes the code back.
@@ -19,6 +21,7 @@ final class GooglePresenter extends SecuredPresenter
     public function __construct(
         private readonly GoogleAccounts $google,
         private readonly SenderDomains $senderDomains,
+        private readonly ILogger $logger,
     ) {
         parent::__construct();
     }
@@ -70,8 +73,11 @@ final class GooglePresenter extends SecuredPresenter
             $allowedDomains = $this->senderDomains->allowedFor($unitId, $this->currentUser->getUser()->personId);
             $account = $this->google->connect($unitId, $code, $allowedDomains);
             $this->flashMessage(\sprintf('Účet %s je propojený.', $account->getEmail()), 'success');
-        } catch (Throwable $exception) {
+        } catch (GoogleConnectException $exception) {
             $this->flashMessage('Propojení se nezdařilo: '.$exception->getMessage(), 'danger');
+        } catch (Throwable $exception) {
+            $this->logger->log($exception, ILogger::EXCEPTION);
+            $this->flashMessage('Propojení se nezdařilo, chybu jsme zaznamenali. Zkuste to prosím znovu.', 'danger');
         }
 
         $this->redirect(':Unit:Settings:default', ['jednotka' => $unitId]);

@@ -13,6 +13,8 @@ use Google\Service\Oauth2;
  */
 final class GoogleService
 {
+    public const string MISSING_SEND_SCOPE = 'Propojený Gmail účet nemá povolené odesílání e-mailů. Odeberte ho a propojte znovu, na obrazovce Googlu nechte zaškrtnuté oprávnění k odesílání e-mailů.';
+
     public function __construct(
         private readonly string $credentialsFile,
         private readonly string $redirectUri,

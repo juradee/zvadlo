@@ -6,8 +6,8 @@ namespace App\Model\Mailing;
 
 use App\Model\Security\Crypto;
 use DateTimeImmutable;
+use Google\Service\Gmail;
 use Google\Service\Oauth2;
-use RuntimeException;
 
 /**
  * Connecting and removing a unit's Gmail accounts (OAuth consent, refresh token stored encrypted).
@@ -48,16 +48,22 @@ final class GoogleAccounts
         $client = $this->google->createClient();
         $token = $client->fetchAccessTokenWithAuthCode($code);
         if (isset($token['error']) || ! isset($token['refresh_token']) || ! \is_string($token['refresh_token'])) {
-            throw new RuntimeException('Google nevrátil trvalý přístup k účtu: '.(string) ($token['error_description'] ?? $token['error'] ?? 'chybí refresh token').'.');
+            throw new GoogleConnectException('Google nevrátil trvalý přístup k účtu: '.(string) ($token['error_description'] ?? $token['error'] ?? 'chybí refresh token').'.');
+        }
+        // Google shows each scope as a checkbox; without gmail.send the account would fail on the first e-mail.
+        // Not revoked: revoking would also kill a working token already stored for the same account.
+        $granted = explode(' ', \is_string($token['scope'] ?? null) ? $token['scope'] : '');
+        if (! \in_array(Gmail::GMAIL_SEND, $granted, true)) {
+            throw new GoogleConnectException('Google nepovolil odesílání e-mailů. Propojte účet znovu a na obrazovce Googlu nechte zaškrtnuté oprávnění k odesílání e-mailů.');
         }
         $client->setAccessToken($token);
         $email = (new Oauth2($client))->userinfo->get()->getEmail();
         if (! \is_string($email) || $email === '') {
-            throw new RuntimeException('Google nevrátil e-mail účtu.');
+            throw new GoogleConnectException('Google nevrátil e-mail účtu.');
         }
         if (! SenderDomains::isAllowed($email, $allowedDomains)) {
             $client->revokeToken($token['refresh_token']);
-            throw new RuntimeException(\sprintf('Účet %s nelze propojit, jednotka smí posílat jen z domén %s.', $email, implode(', ', $allowedDomains)));
+            throw new GoogleConnectException(\sprintf('Účet %s nelze propojit, jednotka smí posílat jen z domén %s.', $email, implode(', ', $allowedDomains)));
         }
 
         $now = new DateTimeImmutable();

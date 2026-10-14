@@ -11,6 +11,7 @@ use App\Model\Event\EventService;
 use App\Model\Mailing\EmailTemplate;
 use App\Model\Mailing\EmailType;
 use App\Model\Mailing\EventMailer;
+use App\Model\Mailing\InvalidOAuthException;
 use App\Model\Mailing\MailComposer;
 use App\Model\Mailing\TemplateRenderer;
 use App\Model\User\CurrentUserEmail;
@@ -19,6 +20,7 @@ use App\Presentation\SecuredPresenter;
 use LogicException;
 use Nette\Application\UI\Form;
 use Throwable;
+use Tracy\ILogger;
 
 /**
  * The event's e-mail texts: editor per type with a preview and a test mail to the leader.
@@ -36,6 +38,7 @@ final class EmailPresenter extends SecuredPresenter
         private readonly EventMailer $mailer,
         private readonly CurrentUserEmail $currentUserEmail,
         private readonly FormFactory $forms,
+        private readonly ILogger $logger,
     ) {
         parent::__construct();
     }
@@ -119,9 +122,12 @@ final class EmailPresenter extends SecuredPresenter
         try {
             $messages = $this->mailer->send($event, $edited->getType(), null, null, [['email' => $email, 'name' => $this->currentUser->getUser()->displayName]], $this->composer->preview($event, $edited->toTemplate()));
             $failed = array_filter($messages, static fn ($message): bool => ! $message->isSent());
-            $this->flashMessage($failed === [] ? \sprintf('Zkušební e-mail odešel na %s.', $email) : 'Zkušební e-mail se nepodařilo odeslat: '.(reset($failed)->getError() ?? ''), $failed === [] ? 'success' : 'danger');
-        } catch (Throwable $exception) {
+            $this->flashMessage($failed === [] ? \sprintf('Zkušební e-mail odešel na %s.', $email) : 'Zkušební e-mail: '.(reset($failed)->getError() ?? ''), $failed === [] ? 'success' : 'danger');
+        } catch (InvalidOAuthException $exception) {
             $this->flashMessage('Zkušební e-mail se nepodařilo odeslat: '.$exception->getMessage(), 'danger');
+        } catch (Throwable $exception) {
+            $this->logger->log($exception, ILogger::EXCEPTION);
+            $this->flashMessage('Zkušební e-mail: '.EventMailer::GENERIC_ERROR, 'danger');
         }
     }
 

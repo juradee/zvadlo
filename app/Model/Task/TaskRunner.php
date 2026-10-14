@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Model\Task;
 
+use App\Model\Mailing\InvalidOAuthException;
 use DateTimeImmutable;
 use RuntimeException;
 use Throwable;
@@ -17,6 +18,7 @@ final class TaskRunner
     public const int TIME_LIMIT_SECONDS = 50;
     /** A running task without a heartbeat for this long belonged to a worker that died. */
     public const int STALE_AFTER_SECONDS = 300;
+    public const string GENERIC_ERROR = 'Úlohu se nepodařilo dokončit, chybu jsme zaznamenali.';
 
     /**
      * @param iterable<TaskHandler> $handlers
@@ -78,7 +80,8 @@ final class TaskRunner
             $this->tasks->save();
         } catch (Throwable $exception) {
             $this->logger->log($exception, ILogger::ERROR);
-            $task->failAttempt($exception->getMessage(), new DateTimeImmutable());
+            // Only the broken-account message is meant for the leader; anything else stays in the log and Sentry.
+            $task->failAttempt($exception instanceof InvalidOAuthException ? $exception->getMessage() : self::GENERIC_ERROR, new DateTimeImmutable());
             $this->tasks->save();
         }
 

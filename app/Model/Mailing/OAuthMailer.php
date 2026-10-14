@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Model\Mailing;
 
+use Google\Service\Exception as GoogleServiceException;
 use Google\Service\Gmail;
 use Nette\Mail\Mailer;
 use Nette\Mail\Message;
@@ -36,6 +37,15 @@ final class OAuthMailer implements Mailer
     {
         $message = new Gmail\Message();
         $message->setRaw(rtrim(strtr(base64_encode($mail->generateMessage()), '+/', '-_'), '='));
-        $this->gmail->users_messages->send('me', $message);
+        try {
+            $this->gmail->users_messages->send('me', $message);
+        } catch (GoogleServiceException $exception) {
+            // The consent screen lets the leader untick "send e-mail"; such an account can never send.
+            if ($exception->getCode() === 403 && \in_array('insufficientPermissions', array_column($exception->getErrors() ?? [], 'reason'), true)) {
+                throw new InvalidOAuthException(GoogleService::MISSING_SEND_SCOPE, 0, $exception);
+            }
+
+            throw $exception;
+        }
     }
 }

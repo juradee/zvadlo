@@ -9,16 +9,20 @@ use App\Model\Registration\Registration;
 use App\Model\Task\Task;
 use DateTimeImmutable;
 use Throwable;
+use Tracy\ILogger;
 
 /**
  * Sends one composed e-mail to its addresses through the event's account and logs every copy.
  */
 final class EventMailer
 {
+    public const string GENERIC_ERROR = 'E-mail se nepodařilo odeslat. Chybu jsme zaznamenali, zkuste to prosím později.';
+
     public function __construct(
         private readonly MailComposer $composer,
         private readonly MailerFactory $mailers,
         private readonly EmailMessageRepository $messages,
+        private readonly ILogger $logger,
     ) {
     }
 
@@ -41,7 +45,9 @@ final class EventMailer
             } catch (InvalidOAuthException $exception) {
                 throw $exception;
             } catch (Throwable $exception) {
-                $error = $exception->getMessage();
+                // The raw transport error (Gmail API JSON) goes to the log and Sentry, the leader sees a generic one.
+                $this->logger->log($exception, ILogger::EXCEPTION);
+                $error = self::GENERIC_ERROR;
             }
 
             $message = new EmailMessage($task, $event, $registration, $type, $recipient['email'], $recipient['name'], $mail->subject, $mail->text, $event->getMailAccount(), $error, new DateTimeImmutable());
