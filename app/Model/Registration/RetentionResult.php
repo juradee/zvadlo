@@ -11,6 +11,9 @@ final readonly class RetentionResult
         public int $answersForgotten,
         public int $anonymizedSynced,
         public int $anonymizedUnsynced,
+        public int $membersForgotten,
+        public int $emailsErased,
+        public int $tasksDeleted,
         public int $fingerprintUnits,
     ) {
     }
@@ -18,11 +21,14 @@ final readonly class RetentionResult
     public function describe(): string
     {
         return \sprintf(
-            '%d events with %d registrations lost their answers, %d non-members with a skautIS person and %d without one were anonymised, fingerprints of %d units deleted.',
+            '%d events with %d registrations lost their answers, %d non-members with a skautIS person and %d without one were anonymised, %d members kept only name and skautIS ID, %d logged e-mails lost address and text, %d finished tasks deleted, fingerprints of %d units deleted.',
             $this->eventsForgotten,
             $this->answersForgotten,
             $this->anonymizedSynced,
             $this->anonymizedUnsynced,
+            $this->membersForgotten,
+            $this->emailsErased,
+            $this->tasksDeleted,
             $this->fingerprintUnits,
         );
     }

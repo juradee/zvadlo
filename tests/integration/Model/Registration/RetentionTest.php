@@ -9,6 +9,8 @@ use App\Model\Event\EventInput;
 use App\Model\Event\EventService;
 use App\Model\Event\EventState;
 use App\Model\Event\PublicRegistration;
+use App\Model\Mailing\EmailMessage;
+use App\Model\Mailing\EmailType;
 use App\Model\Registration\LogActor;
 use App\Model\Registration\MemberFingerprints;
 use App\Model\Registration\Registration;
@@ -17,13 +19,14 @@ use App\Model\Registration\RegistrationService;
 use App\Model\Registration\RetentionService;
 use App\Model\Registration\Sex;
 use App\Model\Task\Task;
+use App\Model\Task\TaskType;
 use App\Tests\Support\IntegrationTester;
 use Codeception\Test\Unit;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Retention rules of spec ch. 14 with the configured periods (12 and 24 months in .env.ci).
+ * Retention rules of spec ch. 14 with the configured periods (12 and 24 months in .env).
  */
 final class RetentionTest extends Unit
 {
@@ -38,6 +41,7 @@ final class RetentionTest extends Unit
     protected function _before(): void
     {
         $this->entityManager = $this->tester->grabService(EntityManagerInterface::class);
+        $this->entityManager->createQuery('DELETE FROM '.EmailMessage::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.Task::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.Event::class)->execute();
         $this->events = $this->tester->grabService(EventService::class);
@@ -95,6 +99,68 @@ final class RetentionTest extends Unit
         self::assertNotNull($this->entityManager->find(Event::class, $lastYear->getId())?->getAnswersForgottenAt());
 
         self::assertSame(0, $retention->run($now)->eventsForgotten, 'the second run has nothing left to do');
+    }
+
+    public function testMembersKeepOnlyTheirIdentityAndTheMailLogLosesAddressesAndTexts(): void
+    {
+        $now = new DateTimeImmutable('2028-06-01 04:00');
+        $sent = new DateTimeImmutable('2026-03-01');
+
+        $old = $this->openEvent();
+        $member = $this->registrations->inviteMembers($old, [101 => null], 1)[0];
+        $this->registrations->respond($member, new RegistrationAnswer(attending: true, contactEmail: 'matka.mala@example.cz', phone: '777123456'));
+        $this->logMail($old, $member, $sent);
+        $task = new Task(TaskType::SendEmail, $old, ['to' => ['matka.mala@example.cz'], 'body' => 'text'], [$member], 1, $sent);
+        $task->finish($sent);
+        $this->entityManager->persist($task);
+        $this->finish($old, '2026-04-10');
+
+        $recent = $this->openEvent();
+        $kept = $this->registrations->inviteMembers($recent, [101 => null], 1)[0];
+        $this->registrations->respond($kept, new RegistrationAnswer(attending: true, contactEmail: 'matka.mala@example.cz'));
+        $this->logMail($recent, $kept, new DateTimeImmutable('2027-05-01'));
+        $this->finish($recent, '2027-05-10');
+        $this->entityManager->flush();
+
+        $retention = $this->tester->grabService(RetentionService::class);
+        \assert($retention instanceof RetentionService);
+
+        $preview = $retention->run($now, dryRun: true);
+        self::assertSame(1, $preview->membersForgotten);
+        self::assertSame(1, $preview->emailsErased);
+        self::assertSame(1, $preview->tasksDeleted);
+        $this->entityManager->clear();
+        self::assertSame('matka.mala@example.cz', $this->logOf($old)->getToEmail(), 'a dry run changes nothing');
+
+        $result = $retention->run($now);
+        self::assertSame(1, $result->membersForgotten);
+        self::assertSame(1, $result->emailsErased);
+        self::assertSame(1, $result->tasksDeleted);
+
+        $this->entityManager->clear();
+        $member = $this->reload($member);
+        self::assertStringContainsString('Malá', $member->getDisplayName(), 'the name stays');
+        self::assertSame(101, $member->getSkautisPersonId(), 'the reference to skautIS stays');
+        self::assertNull($member->getBirthDate());
+        self::assertNull($member->getContactEmail());
+        self::assertNull($member->getPhone());
+        self::assertSame([], $member->getRecipients());
+        self::assertNotNull($member->getAnonymizedAt());
+
+        $kept = $this->reload($kept);
+        self::assertNotNull($kept->getBirthDate(), 'a recent event keeps the copy');
+        self::assertNotSame([], $kept->getRecipients());
+
+        $erased = $this->logOf($old);
+        self::assertSame('', $erased->getToEmail());
+        self::assertNull($erased->getToName());
+        self::assertSame('', $erased->getBody());
+        self::assertSame(EmailType::Invitation, $erased->getType(), 'type, state and time stay for the statistics');
+        self::assertSame('matka.mala@example.cz', $this->logOf($recent)->getToEmail());
+        self::assertNull($this->entityManager->find(Task::class, $task->getId()));
+
+        $again = $retention->run($now);
+        self::assertSame(0, $again->membersForgotten + $again->emailsErased + $again->tasksDeleted, 'the second run has nothing left to do');
     }
 
     public function testFingerprintsOfUnitsWithoutPublicEventsAreDeleted(): void
@@ -162,6 +228,16 @@ final class RetentionTest extends Unit
             contactPhone: null,
             publicRegistration: $public,
         );
+    }
+
+    private function logMail(Event $event, Registration $registration, DateTimeImmutable $sentAt): void
+    {
+        $this->entityManager->persist(new EmailMessage(null, $event, $registration, EmailType::Invitation, 'matka.mala@example.cz', 'Jana Malá', 'Zvadlo na Výprava', 'Přihláška: [osobní odkaz]', null, null, $sentAt));
+    }
+
+    private function logOf(Event $event): EmailMessage
+    {
+        return $this->entityManager->getRepository(EmailMessage::class)->findOneBy(['event' => $event->getId()]) ?? self::fail('log vanished');
     }
 
     private function reload(Registration $registration): Registration

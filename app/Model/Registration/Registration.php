@@ -435,6 +435,15 @@ class Registration
     {
         $this->firstName = null;
         $this->lastName = null;
+        $this->forgetPersonalData($now);
+    }
+
+    /**
+     * Retention of a member (spec ch. 14): everything but the name and the skautIS ID goes; the person can be
+     * looked up in skautIS again by the ID.
+     */
+    public function forgetPersonalData(DateTimeImmutable $now): void
+    {
         $this->nickName = null;
         $this->sex = null;
         $this->birthDate = null;
@@ -455,7 +464,7 @@ class Registration
     }
 
     /**
-     * Retention: the answers and the note go after the shorter period, the identity later or never.
+     * Retention: the answers and the note go after the shorter period, the rest of the personal data later.
      */
     public function forgetAnswers(DateTimeImmutable $now): void
     {

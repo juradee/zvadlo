@@ -59,7 +59,7 @@ final class SendEmailsHandler implements TaskHandler
                     $to[] = ['email' => $email, 'name' => null];
                 }
             }
-            $mail = new ComposedMail($task->getPayloadString('subject'), $task->getPayloadString('body'), $task->getPayloadString('html'));
+            $mail = new ComposedMail($task->getPayloadString('subject'), $task->getPayloadString('body'), $task->getPayloadString('html'), $task->getPayloadString('logged'));
             $messages = $this->mailer->send($event, $type, $registration, $task, $to, $mail);
         } else {
             $messages = $this->mailer->sendToRegistration($registration, $type, $task, ['poznamka' => $task->getPayloadString('note')]);

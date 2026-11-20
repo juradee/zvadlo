@@ -115,7 +115,7 @@ rs/
 | `MAINTENANCE_MODE`, `MAINTENANCE_ALLOWED_IPS`, `MAINTENANCE_STARTED_AT`, `MAINTENANCE_ENDS_AT` | údržba: stránka odstávky, povolené IP/CIDR, ISO časy pro stránku | `false` |
 | `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_PREPARE_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_PHP_BIN`, `DEPLOY_WEB_ROOT`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_PREPARE_KNOWN_HOSTS` | jen v GitHub environmentu pro `deploy.php`; přípravný port nejprve zpřístupní finální SSH port | – |
 | `RETENTION_MONTHS_SYNCED` | anonymizace nečlenů propsaných do skautISu a mazání hodnot polí | `12` |
-| `RETENTION_MONTHS_UNSYNCED` | anonymizace nečlenů nepropsaných do skautISu | `24` |
+| `RETENTION_MONTHS_UNSYNCED` | nejdelší lhůta: anonymizace nečlenů nepropsaných do skautISu, smazání kopie údajů člena (zůstane jméno a skautIS ID), adres a textů v záznamu e-mailů a dokončených úloh fronty | `24` |
 
 ### Docker a Makefile
 

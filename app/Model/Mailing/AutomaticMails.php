@@ -65,6 +65,7 @@ final class AutomaticMails
             'subject' => $mail->subject,
             'body' => $mail->text,
             'html' => $mail->html,
+            'logged' => $mail->loggedText,
             'to' => $to,
         ], [$registration], null);
     }

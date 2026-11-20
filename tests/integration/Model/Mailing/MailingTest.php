@@ -94,7 +94,10 @@ final class MailingTest extends Unit
         self::assertSame(['otec.maly@example.cz', 'matka.mala@example.cz'], array_map(static fn ($m): string => $m->getToEmail(), $annaLog));
         self::assertTrue($annaLog[0]->isSent());
         self::assertStringContainsString('Podzimní výprava', $annaLog[0]->getSubject());
-        self::assertStringContainsString('/prihlaska/'.$this->registrations->getToken($anna), $annaLog[0]->getBody(), 'the personal link is in the mail');
+        $token = $this->registrations->getToken($anna);
+        self::assertStringNotContainsString($token, $annaLog[0]->getBody(), 'the log never holds the personal link');
+        self::assertStringContainsString('[osobní odkaz]', $annaLog[0]->getBody());
+        self::assertStringContainsString('/prihlaska/'.$token, $this->mailpitText('to:otec.maly@example.cz'), 'the personal link is in the mail');
 
         $karelLog = $this->messages->findByRegistration($karel);
         self::assertCount(1, $karelLog);
@@ -134,7 +137,8 @@ final class MailingTest extends Unit
         self::assertTrue($codes->issue($guest));
         $message = $this->messages->findByRegistration($guest)[0];
         self::assertSame(EmailType::EditCode, $message->getType());
-        self::assertSame(1, preg_match('~\*\*(\d{4})\*\*~', $message->getBody(), $match));
+        self::assertStringContainsString('[kód]', $message->getBody(), 'the log never holds the code');
+        self::assertSame(1, preg_match('~\*\*(\d{4})\*\*~', $this->mailpitText('to:host@example.cz'), $match));
         self::assertTrue($guest->hasValidEditCode(new DateTimeImmutable()));
 
         self::assertFalse($codes->verify($guest, '0000'));
@@ -182,8 +186,7 @@ final class MailingTest extends Unit
         $codes = $this->tester->grabService(EditCodeService::class);
 
         self::assertTrue($codes->issue($guest));
-        $message = $this->messages->findByRegistration($guest)[0];
-        self::assertSame(1, preg_match('~\*\*(\d{4})\*\*~', $message->getBody(), $match));
+        self::assertSame(1, preg_match('~\*\*(\d{4})\*\*~', $this->mailpitText('to:host2@example.cz'), $match));
         try {
             $codes->issue($guest);
             self::fail('A second code within a minute must be refused.');
@@ -251,5 +254,23 @@ final class MailingTest extends Unit
         $data = \is_string($json) ? json_decode($json, true) : null;
 
         return \is_array($data) ? (int) ($data['messages_count'] ?? 0) : 0;
+    }
+
+    /**
+     * Plain text of the newest message matching the query; the e-mail log has the link and the code masked.
+     */
+    private function mailpitText(string $query): string
+    {
+        $json = @file_get_contents(self::MAILPIT.'/api/v1/search?query='.urlencode($query));
+        $data = \is_string($json) ? json_decode($json, true) : null;
+        $id = \is_array($data) ? ($data['messages'][0]['ID'] ?? null) : null;
+        if (! \is_string($id)) {
+            self::fail('No message for "'.$query.'" in Mailpit.');
+        }
+
+        $json = @file_get_contents(self::MAILPIT.'/api/v1/message/'.$id);
+        $message = \is_string($json) ? json_decode($json, true) : null;
+
+        return \is_array($message) && \is_string($message['Text'] ?? null) ? $message['Text'] : '';
     }
 }

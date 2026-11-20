@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'registrations:anonymize', description: 'Applies the retention rules: deletes answers of finished events and anonymises non-members (the scheduler runs this daily)')]
+#[AsCommand(name: 'registrations:anonymize', description: 'Applies the retention rules: deletes answers of finished events, anonymises non-members, strips members to name and skautIS ID and erases the e-mail log (the scheduler runs this daily)')]
 final class RegistrationsAnonymizeCommand extends Command
 {
     public function __construct(private readonly RetentionService $retention)

@@ -15,6 +15,9 @@ use Nette\Mail\Message;
  */
 final class MailComposer
 {
+    /** Symbols whose values unlock a registration; the e-mail log keeps only the mask. */
+    private const array SECRETS = ['odkaz-prihlaska' => '[osobní odkaz]', 'kod' => '[kód]'];
+
     public function __construct(
         private readonly TemplateRenderer $renderer,
         private readonly MarkdownRenderer $markdown,
@@ -40,7 +43,14 @@ final class MailComposer
         }
         $text = $this->renderer->render($template->body, $values);
 
-        return new ComposedMail($subject, $text, $this->markdown->toHtml($text));
+        $masked = $values;
+        foreach (self::SECRETS as $symbol => $mask) {
+            if (($masked[$symbol] ?? '') !== '') {
+                $masked[$symbol] = $mask;
+            }
+        }
+
+        return new ComposedMail($subject, $text, $this->markdown->toHtml($text), $this->renderer->render($template->body, $masked));
     }
 
     /**
@@ -57,7 +67,7 @@ final class MailComposer
         ]);
         $text = $this->renderer->render($template->body, $values);
 
-        return new ComposedMail($this->renderer->render($template->subject, $values), $text, $this->markdown->toHtml($text));
+        return new ComposedMail($this->renderer->render($template->subject, $values), $text, $this->markdown->toHtml($text), $text);
     }
 
     /**

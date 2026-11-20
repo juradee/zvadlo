@@ -50,7 +50,7 @@ final class EventMailer
                 $error = self::GENERIC_ERROR;
             }
 
-            $message = new EmailMessage($task, $event, $registration, $type, $recipient['email'], $recipient['name'], $mail->subject, $mail->text, $event->getMailAccount(), $error, new DateTimeImmutable());
+            $message = new EmailMessage($task, $event, $registration, $type, $recipient['email'], $recipient['name'], $mail->subject, $mail->loggedText, $event->getMailAccount(), $error, new DateTimeImmutable());
             $this->messages->add($message);
             $logged[] = $message;
         }

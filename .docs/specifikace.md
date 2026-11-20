@@ -834,7 +834,7 @@ Tabulky (Doctrine entity s atributy, migrace v `migrations/`, cizí klíče všu
 | `registration_option_value` | `registration_id`, `option_id` → `event_field_option`; PK `(registration_id, option_id)`; radio 1 řádek, checklist N řádků |
 | `registration_log` | `id`, `registration_id`, `at`, `actor_type` (`participant` / `user` / `system`), `actor_user_id`, `message`, `changes` (JSON, neprůhledný) |
 | `unit_member_fingerprint` | `unit_id`, `person_id`, `fingerprint_full` (HMAC „příjmení|jméno|datum narození“), `fingerprint_surname` (HMAC „příjmení|datum narození“), `refreshed_at`; PK `(unit_id, person_id)`; jen pro jednotky s akcí s veřejným přihlašováním (viz 4.5) |
-| `email_message` | `id`, `task_id`, `event_id`, `registration_id`, `type` (typ e-mailu včetně `reminder`), `to_email`, `to_name`, `subject`, `body`, `oauth_id`, `state` (`sent` / `failed`), `sent_at`, `error`; log každého odchozího e-mailu, píše ho worker (kód pro úpravu a zkušební e-mail se zapisují hned) |
+| `email_message` | `id`, `task_id`, `event_id`, `registration_id`, `type` (typ e-mailu včetně `reminder`), `to_email`, `to_name`, `subject`, `body` (osobní odkaz a kód zamaskované), `oauth_id`, `state` (`sent` / `failed`), `sent_at`, `error`; log každého odchozího e-mailu, píše ho worker (kód pro úpravu a zkušební e-mail se zapisují hned); po retenční lhůtě se adresa, jméno, předmět a text vymažou (14) |
 | `task` | `id`, `type`, `event_id`, `state` (`queued` / `running` / `done` / `failed`), `payload` (JSON, neprůhledný), `attempts`, `progress_done`, `progress_total`, `error`, `created_by_user_id`, `created_at`, `started_at`, `finished_at` |
 | `task_registration` | `task_id`, `registration_id`; PK `(task_id, registration_id)`; které přihlášky úloha zpracovává |
 | `google_oauth` | `id` (UUID), `unit_id`, `email`, `refresh_token_encrypted` (šifrovaný klíčem `APP_SECRET`), `updated_at`; unikátní `(unit_id, email)` |
@@ -848,19 +848,26 @@ přepíší nebo smažou, záznam `registration` zůstane kvůli statistikám.
 
 ## 14. Osobní údaje
 
-- Členové: systém ukládá skautIS ID, jméno, datum narození (jen pro ověření), e-maily použité k odeslání,
-  hodnoty z přihlášky. Zdrojem pravdy zůstává skautIS.
+- Členové: systém ukládá skautIS ID, jméno, přezdívku, pohlaví, datum narození (jen pro ověření), e-maily
+  použité k odeslání (s jmény rodičů), telefon, kontaktní e-mail a hodnoty z přihlášky. Je to kopie ze skautISu pro
+  ověření odkazu a rozesílání bez skautIS tokenu; zdrojem pravdy zůstává skautIS.
 - Nečlenové: jméno, pohlaví, datum narození, adresa, e-mail, telefon, hodnoty z přihlášky.
 - Retence po konci akce:
   - hodnoty vlastních polí všech přihlášek a poznámky se mažou po **12 měsících**;
   - osobní údaje nečlena **propsaného do skautISu** se anonymizují po **12 měsících** (údaje žijí ve skautISu);
-  - osobní údaje nečlena **nepropsaného** do skautISu se anonymizují po **24 měsících**.
+  - po **24 měsících** (směrnice Junáka dovoluje vedoucím akce zpracovávat údaje účastníků nejdéle dva roky od
+    akce) se anonymizují osobní údaje nečlena **nepropsaného** do skautISu, u **člena** se smaže vše kromě jména
+    a skautIS ID (podle ID jde údaje znovu dohledat ve skautISu), záznam odeslaných e-mailů (`email_message`) ztratí
+    adresu, jméno, předmět a text (zůstane typ, stav a čas kvůli statistikám) a smažou se dokončené úlohy fronty
+    akce, jejichž parametry nesou adresy a texty.
 
-  Zůstávají jen souhrnná čísla. Lhůty jsou konfigurovatelné systémem (`RETENTION_MONTHS_SYNCED`,
-  `RETENTION_MONTHS_UNSYNCED`), ne jednotkou. Anonymizaci provádí konzolový příkaz `registrations:anonymize`
-  spouštěný plánovačem denně; hotové kroky si značí `event.answers_forgotten_at` a `registration.anonymized_at`,
-  nečlena s osobou založenou Zvadlem pozná podle `registration.skautis_person_created_at`. Členové si jméno
-  a skautIS ID nechávají.
+  Zůstávají jen souhrnná čísla. Lhůty jsou konfigurovatelné systémem (`RETENTION_MONTHS_SYNCED` pro 12 měsíců,
+  `RETENTION_MONTHS_UNSYNCED` pro 24 měsíců), ne jednotkou. Anonymizaci
+  provádí konzolový příkaz `registrations:anonymize` spouštěný plánovačem denně; hotové kroky si značí
+  `event.answers_forgotten_at` a `registration.anonymized_at` (u člena i po smazání kopie, jméno zůstává), nečlena
+  s osobou založenou Zvadlem pozná podle `registration.skautis_person_created_at`.
+- Záznam e-mailu nikdy nedrží osobní odkaz ani kód pro úpravu: text se do `email_message.body` ukládá s maskou
+  `[osobní odkaz]` a `[kód]`.
 - Zamítnutá přihláška (5.1) se anonymizuje **ihned**, ne až po retenční lhůtě; zůstane `skautis_person_id`
   nebo otisk e-mailu kvůli blokaci opakovaného veřejného přihlášení.
 - Otisky členů (4.5) jsou HMAC s klíčem z `APP_SECRET`; čitelná jména a data narození členů mimo akci se

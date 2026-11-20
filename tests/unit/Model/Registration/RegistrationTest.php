@@ -161,6 +161,25 @@ final class RegistrationTest extends Unit
         self::assertStringContainsString('nepatří k nám', $registration->getLogs()[\count($registration->getLogs()) - 1]->getMessage());
     }
 
+    public function testRetentionLeavesAMemberOnlyTheNameAndTheSkautisId(): void
+    {
+        $registration = $this->member();
+        $registration->addRecipient('matka@example.cz', 'Jana Malá', RecipientSource::Mother);
+        $registration->respond($this->answer(attending: true, note: 'tajné'), true, $this->now);
+
+        $registration->forgetPersonalData($this->now);
+
+        self::assertSame('Malá Anna', $registration->getDisplayName());
+        self::assertSame(101, $registration->getSkautisPersonId(), 'the data can be looked up in skautIS again');
+        self::assertNull($registration->getBirthDate());
+        self::assertNull($registration->getSex());
+        self::assertNull($registration->getContactEmail());
+        self::assertNull($registration->getNote());
+        self::assertSame([], $registration->getRecipients());
+        self::assertNotNull($registration->getAnonymizedAt());
+        self::assertSame(RegistrationState::Registered, $registration->getState(), 'the registration itself stays for the statistics');
+    }
+
     public function testPublicSignUpIsPairedWhenAMemberMatched(): void
     {
         $event = $this->event();

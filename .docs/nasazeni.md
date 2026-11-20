@@ -114,9 +114,10 @@ během deploye nepracovaly se starým schématem databáze; po vypnutí údržby
 Denní úloha plánovače `registrations:anonymize` (v dockeru `bin/console registrations:anonymize --dry-run` ukáže počty)
 provádí kapitolu 14 specifikace: po `RETENTION_MONTHS_SYNCED` měsících od konce akce smaže odpovědi a poznámky
 všech přihlášek (`event.answers_forgotten_at`) a anonymizuje nečleny, kterým Zvadlo založilo osobu ve skautISu
-(`registration.skautis_person_created_at`); po `RETENTION_MONTHS_UNSYNCED` měsících anonymizuje nečleny bez osoby
-ve skautISu. Členové si nechávají skautIS ID a jméno. Otisky členů jednotek bez akce s veřejným přihlašováním se
-mažou při každém běhu.
+(`registration.skautis_person_created_at`); po `RETENTION_MONTHS_UNSYNCED` měsících (nejdelší lhůta, výchozí 24)
+anonymizuje nečleny bez osoby ve skautISu, členům nechá jen skautIS ID a jméno, vymaže adresy, jména, předměty a texty
+v záznamech `email_message` a smaže dokončené úlohy fronty akce. Otisky členů jednotek bez akce s veřejným
+přihlašováním se mažou při každém běhu.
 
 ## Kontrola závislostí
 
